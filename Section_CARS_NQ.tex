@@ -1,0 +1,141 @@
+\section{Incorporating Numerical Quadrature}
+\label{section: CARS-NQ}
+Recall that the {\em Gaussian smoothing} of $f$ is defined as
+\begin{equation*}
+    \mathcal{G}_{r}[f](x) = \mathbb{E}_{u \sim \mathcal{N}(0, I_d)}[f(x + r u)].
+\end{equation*}
+As discussed in \cite{nesterov2017random} and elsewhere
+\begin{equation*}
+    \nabla\mathcal{G}_{r}[f] (x) = r^{-1}\mathbb{E}[f(x+r u)u] =  \mathbb{E}[d_{r}(x; u)u],
+\end{equation*}
+thus $d_{r}(x; u)u$ is an unbiased estimator of $\nabla\mathcal{G}_{r}[f]$. This fact is key in proving the convergence of NS random search \cite{nesterov2017random}. 
+Consider a single step of Newton's method to a {\em smoothed, one-dimensional} function, by slicing $f$ in a fixed direction $\hat{u}_k \in S^{d-1}$. That is, consider $u_k = t_k\hat{u}_k$ with $t_k \sim \mathcal{N}(0,1)$, and define the one-dimensional function $\tilde{f}(t;x_k,\hat{u}_k) = f(x_k + t\hat{u}_k)$.
+Then its Gaussian smoothing is given by
+\begin{equation*}
+    \mathcal{G}_{r}[\tilde{f}(\cdot;x_k,\hat{u}_k)](s) = \mathbb{E}_{t\sim \mathcal{N}(0,1)} [ \tilde{f} (s+r t;x_k,\hat{u}_k)].
+\end{equation*}
+For simplicity, we omit $x_k$ and $\hat{u}_k$ when they are clear from context. Note that $d_{r}$ is an unbiased estimator of $\mathcal{G}_{r}[\tilde{f}]^{\prime}(0)$, and $h_{r}$ is a (biased) estimator of $\mathcal{G}_{r}[\tilde{f}]^{\prime\prime}(0)$. Thus, the CARS step $x_{\mathrm{CARS}} = x_{k} - d_{r}/\hat{L}h_{r}$ actually mirrors a single step of Newton's method, starting at $s=0$ for $\mathcal{G}_{r}[\tilde{f}](s)$.
+
+In this section we propose a variant of CARS which uses better estimators of $\mathcal{G}_{r}[\tilde{f}]^{\prime}(0)$ and $\mathcal{G}_{r}[\tilde{f}]^{\prime\prime}(0)$.
+By integration by parts\footnote{Again, this can also by deduced from Stein's formula \cite{stein1972bound, stein1981estimation}}:
+\begin{align}
+    \mathcal{G}_{r}[\tilde{f}]^{\prime}(s)       & = r^{-1}\mathbb{E}_{t \sim \mathcal{N}(0,1)}\left[t\tilde{f}(s+r t)\right], \label{eq: G_mu f'}        \\
+    \mathcal{G}_{r}[\tilde{f}]^{\prime\prime}(s) & = r^{-2}\mathbb{E}_{t \sim \mathcal{N}(0,1)}\left[(t^2-1)\tilde{f}( s+r t)\right].\label{eq: G_mu f''}
+\end{align}
+As these integrals are {\em one-dimensional} they may be accurately approximated using as few as three queries with {\em Gauss-Hermite} (GH) quadrature. The following is a simple consequence of \cite{abramowitz1972handbook}.
+\begin{lemma}\label{lemma: accuracy of GH quadrature}
+    Let $\{(t_i,w_i)\}_{i=1}^{q}$ be the GH quadrature points and weights. Define
+    \begin{align}
+         & d^{\mathrm{NQ}}_{r,q} = \frac{1}{r\sqrt{\pi}}\sum_{i=1}^{q} w_i \sqrt{2} t_i \tilde{f}(\sqrt{2}r t_i) \label{eq: GH quadrature for f'},   \\
+         & h^{\mathrm{NQ}}_{r,q} = \frac{1}{r^2\sqrt{\pi}}\sum_{i=1}^{q} w_i (2t_i^2-1) \tilde{f}(\sqrt{2} r t_i). \label{eq: GH quadrature for f''}
+    \end{align}
+    Then $d^{\mathrm{NQ}}_{r,q} - \mathcal{G}_{r}[\tilde{f}]^{\prime}(0) = \mathcal{O}(r^{2q-2})$ and $h^{\mathrm{NQ}}_{r,q} - \mathcal{G}_{r}[\tilde{f}]^{\prime\prime}(0) = \mathcal{O}(r^{2q-4})$.
+\end{lemma}
+Here the constant for the $\mathcal{O}$-notation depends on $\tilde{f}$ and $q$. See \cite{abramowitz1972handbook} for numerical expressions for $t_i$ and $w_i$. Notice that when $q$ is odd, we only need $q-1$ new function queries, since $t=0$ is one of the quadrature points. Using $d^{\mathrm{NQ}}_{r,q}, h^{\mathrm{NQ}}_{r,q}$ allows one to obtain extremely accurate approximations to $\mathcal{G}_r[\tilde{f}]^{\prime}(s)$ and $\mathcal{G}_r[\tilde{f}]^{\prime\prime}(s)$ while using a much larger $r$. Although large $r$ is not necessarily desirable when $f$ is strongly convex, it can be very useful when $f$ is non-convex of the form
+\begin{equation}
+    f(x) = f_{\mathrm{cvx}}(x) + f_{\mathrm{osc}}(x),
+    \label{Eq:Def_Oscillatory}
+\end{equation}
+where $f_{\mathrm{cvx}}$ is strongly convex while $f_{\mathrm{osc}}$ is rapidly oscillating, {\em i.e.} $f_{\mathrm{osc}}(x) = \psi(x)\cos(\lambda\phi(x))$ where $\psi$ and $\phi$ are smooth and $\|\psi\|_{\infty} < \infty$. % edited on Sept 11 
+
+\begin{theorem}
+    \label{thm: CARS-NQ Osc.}
+    Suppose $f$ is non-convex of the form \eqref{Eq:Def_Oscillatory}.
+    For any fixed $\hat{u}$ consider $\tilde{f}_{\mathrm{cvx}}(t;x,\hat{u}) = f_{\mathrm{cvx}}(x + t\hat{u})$ and $\mathcal{G}_{r}[\tilde{f}_{\mathrm{cvx}}](s) = \mathbb{E}_{t\sim \mathcal{N}(0,1)} [ \tilde{f}_{\mathrm{cvx}}(s+r t;x,\hat{u})]$.
+    If $\tilde{\phi}(t) = \phi(x+t\hat{u})$ satisfies $|\tilde{\phi}^{\prime}(t)| \geq c$ and $\tilde{\phi}^{\prime}$ is monotone,
+    then
+    \begin{align}
+        |d^{\mathrm{NQ}}_{r,q} - \mathcal{G}_{r}[\tilde{f}_{\mathrm{cvx}}]^{\prime}(0)|       & = \mathcal{O}(r^{2q-2} + \frac{1}{r}),     \\
+        |h^{\mathrm{NQ}}_{r,q} - \mathcal{G}_{r}[\tilde{f}_{\mathrm{cvx}}]^{\prime\prime}(0)| & = \mathcal{O}(r^{2q-4} + \frac{1}{r^2})  .
+    \end{align}
+\end{theorem}
+\begin{proof} Note that, thanks to Lemma~\ref{lemma: accuracy of GH quadrature}, we only need to show
+    $\mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime}(0) = \mathcal{O}(r^{-1})$ and
+    $ \mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime\prime}(0) = \mathcal{O}(r^{-1})$.
+    Denote $\tilde{\psi}(t) = \psi(x + t\hat{u})$. Then  $\tilde{f}_\mathrm{osc}(t) = \tilde{\psi}(t)\cos(\lambda \tilde{\phi}(t))$.
+    Then
+    \begin{align*}
+        \left|\mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime}(0)\right|
+         & = (2\pi)^{-1/2} r^{-1} \left|\int_{-\infty}^{\infty} t e^{-t^2/2}\tilde{\psi}(rt)\cos(\lambda \tilde{\phi}(rt)) dt\right| \\
+         & \leq (2\pi)^{-1/2} r^{-1} \left|
+        \int_{-\infty}^{\infty} t e^{-t^2/2}\tilde{\psi}(rt) e^{i\lambda \tilde{\phi}(rt)} dt\right|.
+    \end{align*}
+    Because $\|\tilde{\psi}(t)\|_\infty < \infty$, we can bound the tail part of the integral arbitrarily small by a smooth bump function $a_R(t)$ that vanishes for $|t|>R$, and taking a sufficiently large $R>0$:
+    \begin{align*}
+        \left|\mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime}(0)\right|
+         & \leq (2\pi)^{-1/2} r^{-1}\left|\int_{-\infty}^{\infty} a_R(t) t e^{-t^2/2r^2}\tilde{\psi}(rt)e^{i\lambda \tilde{\phi}(rt)} dt\right| + \mathcal{O}(r^{-1})
+    \end{align*}
+    Then we apply Lemma~2.6 of \cite{Tao247BNotes} with $\phi(t) = \tilde{\phi}(rt)$ and the first term is also bounded by $\mathcal{O}(r^{-1})$.
+    Similarly, for the second derivative,
+    \begin{align*}
+        \left|\mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime\prime}(0)\right|
+         & = (2\pi)^{-1/2} r^{-2} \left|\int_{-\infty}^{\infty} (t^2-1) e^{-t^2/2}\tilde{\psi}(rt)\cos(\lambda \tilde{\phi}(rt)) dt\right|
+    \end{align*}
+    and we get $\mathcal{G}_r[\tilde{f}_\mathrm{osc}]^{\prime\prime}(0) = \mathcal{O}(r^{-2})$.
+\end{proof}
+
+Thus a judicious choice of $r$ ``smoothes out'' the oscillatory part, while still accurately estimating the first and second derivatives of the strongly convex part. Each iterate of CARS with Numerical Quadrature (CARS-NQ, see Algorithm~\ref{alg:CARS-NQ}) effectively applies (one step of) Newton's method to $f_{\mathrm{cvx}}$, while ignoring $f_{\mathrm{osc}}$. This suggests, but does not prove, CARS-NQ is robust towards local minima induced by $f_{\mathrm{osc}}$ and will converge towards the global minimum of $f$ (assuming it is close to the global minimum of $f_{\mathrm{cvx}}$). This intuition is supported by our empirical results, which are presented in Section~\ref{sec:ExperimentalResults}.
+
+\begin{algorithm}[H]
+    \caption{CARS with \textbf{N}umerical \textbf{Q}uadrature (CARS-NQ)}
+    \label{alg:CARS-NQ}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $x_0$: initial point; $r$: sampling radius; $q$: number of quadrature points.
+        \State  Get the oracle $f(x_0)$.
+        \For{$k = 0$ to $K$}
+        \State Sample $u_k$ from $\mathcal{D}$. %$\unif(\mathbb{S}^{d-1})$.
+        \State Compute $x^{i} := x_{k} + r \sqrt{2} t_i u_k$ for $i=1,\cdots, q$.
+        \State Compute $d^{\mathrm{NQ}}_{r,q}$ and $h^{\mathrm{NQ}}_{r,q}$ using \eqref{eq: GH quadrature for f'} and \eqref{eq: GH quadrature for f''}.
+        \State Compute $\hat{L}_{u_k}$ using \eqref{eq: approx Lhat}.
+        \State Compute $x_{\mathrm{CARS}} = x_{k} - \frac{d^{\mathrm{NQ}}_{r,q}}{\hat{L}_{u_k}h^{\mathrm{NQ}}_{r,q}}$.
+        \State
+            $x_{k+1} = \argmin\{f(x^{1}),\cdots, f(x^{q}), f(x_k), f(x_{\mathrm{CARS}})\}$.
+        \EndFor
+        \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+\end{algorithm}
+
+
+\cite{ZHANG2021,tran2020adadgs} also suggest using GH quadrature in DFO. However the underlying principle of their proposed algorithms, DGS and AdaDGS, respectively, is quite different from CARS-NQ. They apply GH quadrature in {\em each coordinate direction}. The resulting estimates are then stacked into a vector, which they refer to as the Directional Gaussian Smoothed (DGS) gradient. The DGS gradient is not easily interpretable as the gradient of a function, hence analyzing the convergence of AdaDGS and DGS is tricky. Nevertheless, in practice both AdaDGS and DGS converge in relatively few iterations, although we note their per-iteration query complexity is $\Omega(d)$, making them unsuitable for high-dimensional problems.
+
+\paragraph{Bounding the relative smoothness.} Both CARS and CARS-NQ require the knowledge of the relative smoothness constant, $\hat{L}$, so as to set the step-size appropriately. Using NQ a proper value of $\hat{L}$ may be suggested.
+\vspace{3mm}
+\begin{proposition}\label{prop: approximating Lhat}
+    Let $f:\mathbb{R}\rightarrow\mathbb{R}$ satisfy $f''(0)>0$. Assume $f$ is three times continuously differentiable and $M = \sup_{x\in\mathbb{R}}|f^{\prime\prime\prime}(x)|<\infty$. Then $f$ satisfies
+    \begin{equation*}
+        f(t) - f(0) - tf'(0) \leq \frac{\tilde{L}}{2}t^2f''(0)
+    \end{equation*}
+    at $t = -{f'(0)}/{(\tilde{L}f''(0))}$, where
+    \begin{equation*}
+        \tilde{L} = \frac{1}{2} + \sqrt{\frac{1}{4} + \frac{M|f'(0)|}{3f''(0)}}.
+    \end{equation*}
+\end{proposition}
+\begin{proof}
+    From Taylor's theorem,
+    \begin{align*}
+        f(t) - f(0) - tf'(0) = \frac{t^2}{2}f''(0) + \frac{t^3}{6}f'''(\zeta_t).
+    \end{align*}
+    for some $\zeta_t \in (0, t)$. Therefore, dividing both sides by $t^2f''(x)/2$, we only need to show that
+    \begin{align*}
+        1 + \frac{t f'''(\zeta_t)}{3f''(0)} \leq \tilde{L}.
+    \end{align*}
+    Since $ t = -f'(0)/\tilde{L}f''(0)$, this is equivalent to
+    \begin{equation*}
+        \tilde{L}^2 - \tilde{L} \geq  -\frac{ f'(0)f'''(\zeta_t)}{3f''(0)}
+    \end{equation*}
+    However,  from the definition of $\tilde{L}$,
+    \begin{align*}
+        \left(\tilde{L}-\frac{1}{2}\right)^2 \geq \frac{1}{4} + \frac{M|f'(0)|}{3f''(0)}
+    \end{align*} and it follows that
+    \begin{align*}
+        \tilde{L}^2 - \tilde{L} \geq \frac{M|f'(0)|}{3f''(0)} \geq  -\frac{ f'(0)f'''(\zeta_t)}{3f''(0)}.
+    \end{align*}
+
+\end{proof}
+
+Although Proposition~\ref{prop: approximating Lhat} does not upper bound the relative smoothness parameter over the whole domain, it provides the desired inequality at the desired point.
+As in \eqref{eq: G_mu f'} and \eqref{eq: G_mu f''}, also the higher order derivatives of $\mathcal{G}_r [\tilde{f}]$ can be easily estimated using NQ. Hence, we suggest the following approximation to the relative smoothness parameter for each direction $u$:
+\begin{equation}\label{eq: approx Lhat}
+    \hat{L}_{u} \approx \frac{1}{2} + \sqrt{\frac{1}{4} + \frac{|d^{\mathrm{NQ}}_{r,q}| \,m_{r,q}^{\mathrm{NQ}}} {(h^{\mathrm{NQ}}_{r,q})^2} },
+\end{equation}
+where $m_{r,q}^{\mathrm{NQ}}$ denote the NQ estimator of $\mathcal{G}_r [\tilde{f}]^{\prime\prime\prime}(0)$.

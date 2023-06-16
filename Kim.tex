@@ -1,0 +1,95 @@
+\documentclass [PhD] {uclathes}
+
+\input {mymacros}                         % personal LaTeX macros
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Usually things live in separate flies.
+%
+% \input {prelim}                           % preliminary page info
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                      %
+%                          PRELIMINARY PAGES                           %
+%                                                                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title          {Enhancing Local Derivative-Free Optimization with\\ Curvature Information and Inspection Strategies}
+\author         {Bumsu Kim}
+\department     {Mathematics}
+% Note:  degreeyear should be optional, but as of  5-Feb-96
+% it seems required or you get a year of ``2''.   -johnh
+\degreeyear     {2023}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chair          {Stanley J.\ Osher}
+\member         {Wotao\ Yin}
+\member         {Deanna\ Needell}
+\member         {Guido F.\ Montufar}
+\member         {Quanquan\ Gu}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\dedication     {\textsl{To my parents, \\
+                for whom my respect and love remain throughout my life.}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\acknowledgments {(Acknowledgments omitted for brevity.)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\vitaitem   {2015}
+                {B.S. in Mathematics, Korea Advanced Institute of Science and Technology.}
+\vitaitem   {2017}
+                {M.S. in Mathematics, Korea Advanced Institute of Science and Technology.}
+\vitaitem   {2017--Present}
+                {Teaching and Research Assistant, Department of Mathematics, UCLA.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\publication    {Bumsu Kim, HanQin Cai, Daniel McKenzie, and Wotao Yin.
+                Curvature-Aware Derivative-Free Optimization.
+                \textsl{arXiv preprint arXiv:2109.13391 (2021)}.}
+\publication    {Bumsu Kim, and Wotao Yin.
+                Bridging the Gap Between Local and Global Derivative-Free Optimization.
+                \textsl{In Preparation}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\abstract       {(Abstract omitted for brevity)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin {document}
+\makeintropages
+% \input{Chapter_temp.tex} % temporary
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Ordinarily each chapter (at least) is in a separate file.
+%
+%\input {chapter1}                         % Chapter 1 of dissertation
+%\input {chapter2}                         % Chapter 2
+%\input {chapter3}                         % etc.
+
+\chapter{Introduction}
+\input{Chapter_Introduction.tex}
+
+
+\chapter{Curvature-Aware Derivative-Free Optimization}
+\input{Chapter_CARS}
+
+\chapter{Bridging the Gap Between Local and Global DFO Method Through Inspection Strategy}
+\input{Chapter_Inspection}
+
+\chapter{Appendix}
+\input{Chapter_Appendix}
+%\bibliography {bib/network,bib/naming}    % bibliography references
+\bibliographystyle{uclathes}                % see thesis.bst for details
+\bibliography{realbib}
+
+\end {document}
+

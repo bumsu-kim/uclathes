@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: Kim.aux
+The style file: uclathes.bst
+Database file #1: realbib.bib
+UCLA thesis.bst Version 0.92 BETA (3/28/91).
+Bugs to wales@CS.UCLA.EDU
+Warning--can't use both volume and number fields in bibi2020stochastic
+You've used 71 entries,
+            2546 wiz_defined-function locations,
+            960 strings with 17476 characters,
+and the built_in function-call counts, 33556 in all, are:
+= -- 3426
+> -- 1565
+< -- 23
++ -- 601
+- -- 430
+* -- 2653
+:= -- 5099
+add.period$ -- 223
+call.type$ -- 71
+change.case$ -- 425
+chr.to.int$ -- 70
+cite$ -- 72
+duplicate$ -- 1407
+empty$ -- 2353
+format.name$ -- 670
+if$ -- 6832
+int.to.chr$ -- 2
+int.to.str$ -- 0
+missing$ -- 144
+newline$ -- 358
+num.names$ -- 215
+pop$ -- 417
+preamble$ -- 1
+purify$ -- 637
+quote$ -- 0
+skip$ -- 1290
+stack$ -- 0
+substring$ -- 2176
+swap$ -- 306
+text.length$ -- 23
+text.prefix$ -- 171
+top$ -- 2
+type$ -- 560
+warning$ -- 1
+while$ -- 331
+width$ -- 76
+write$ -- 926
+(There was 1 warning)

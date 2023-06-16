@@ -1,0 +1,56 @@
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage[title]{appendix}
+\usepackage[table]{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\usepackage{microtype}
+\usepackage[caption=false]{subfig}
+\usepackage{url}
+\usepackage[shortlabels]{enumitem}
+\usepackage[export]{adjustbox}
+\usepackage{bm}
+\usepackage[utf8]{inputenc} 
+\usepackage[T1]{fontenc}    
+\usepackage{setspace}
+%\usepackage{geometry}
+\graphicspath{{fig/fig_CARS/}, {fig/fig_insp/}}
+
+%% Theorem Environments
+\theoremstyle{plain} % Plain style
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem*{theorem*}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}{Conjecture}
+
+
+\theoremstyle{definition} % definition style
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{definition}{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{problem}{Problem}
+\newtheorem{question}{Question}
+\newtheorem{assumption}{Assumption}
+
+\def\cO{\mathcal{O}}
+\def\unif{\mathrm{Unif}}
+\def\rank{\mathrm{rank}}
+\def\supp{\mathrm{supp}}
+\def\sign{\mathrm{sign}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\minimize}{\mathrm{minimize}}
+\DeclareMathOperator*{\subject}{\mathrm{subject~to~}}
+
+\newcommand{\BK}[1]{{\textcolor{cyan}{#1}}}

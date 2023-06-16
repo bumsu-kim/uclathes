@@ -5,11 +5,9 @@
 #
 
 FILES=README \
-	demo.tex demo.dvi demo.pdf \
-	demo_techreport.tex demo_techreport.pdf \
-	thesis_spec.tex thesis_spec.pdf \
+	Kim.tex Kim.dvi Kim.pdf \
 	uclathes.cls uclath12.clo uclathti.clo uclathma.clo \
-	uclathes.bst Makefile
+	sn-mathphys.bst uclathes.bst Makefile
 
 all:  latex ps pdf
 
@@ -23,32 +21,14 @@ tar.gz:
 DVIPS=dvips
 PS2PDF=ps2pdf14
 
-latex latex.demo::
-	latex demo
+latex latex.Kim::
+	latex Kim
 
-ps demo.ps::
-	$(DVIPS) demo
+ps Kim.ps::
+	$(DVIPS) Kim
 
-pdf demo.pdf::
-	$(PS2PDF) demo.ps demo.pdf
-
-latex latex.demo_techreport::
-	latex demo_techreport
-
-ps demo_techreport.ps::
-	$(DVIPS) demo_techreport
-
-pdf demo_techreport.pdf::
-	$(PS2PDF) demo_techreport.ps demo_techreport.pdf
-
-latex latex.thesis_spec::
-	latex thesis_spec
-
-ps thesis_spec.ps::
-	$(DVIPS) thesis_spec
-
-pdf thesis_spec.pdf::
-	$(PS2PDF) thesis_spec.ps thesis_spec.pdf
+pdf Kim.pdf::
+	$(PS2PDF) Kim.ps Kim.pdf
 
 clean:
 	rm *.aux *.toc *.lot *.lof *.dvi *.log *.ps

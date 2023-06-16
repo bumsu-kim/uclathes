@@ -1,0 +1,177 @@
+\section{Introduction}
+We consider minimizing a function $f: \mathbb{R}^{d}\to \mathbb{R}$, with only access to function evaluations $f(x)$, and no access to gradients or directional derivatives. This setting is commonly referred to as derivative-free optimization (DFO). DFO has a rich history and has recently gained popularity in various areas such as reinforcement learning \cite{salimans2017evolution,mania2018simple,choromanski2020provably}, hyperparameter tuning \cite{bergstra2012random}, and adversarial attacks on neural network classifiers \cite{chen2017zoo,cai2020zeroth}. In all of these applications, evaluating $f(x)$ is either expensive, time-consuming, or inconvenient, and therefore, it is desirable for DFO algorithms to minimize the number of function evaluations required.
+
+Classical methods for DFO include the Nelder-Mead simplex method \cite{nelder1965simplex}, direct search methods \cite{kolda2003optimization}, and model-based methods \cite{conn2009introduction}. However, these methods tend to scale poorly with the problem dimension $d$, although recent works \cite{cartis2022scalable,cartis2022global,cartis2022dimensionality} have made progress in this direction. Due to the demands of large-scale machine learning applications, \textit{zeroth-order} (ZO) methods for DFO have gained increasing attention \cite{liu2020primer}. ZO methods mimic first-order methods like gradient descent but approximate all derivative information using function queries. At each iteration, the algorithm selects a direction $u_k$ and takes a step $x_{k+1} = x_k + \alpha_k u_k$. While the selection of $u_k$ has been well studied (see \cite{berahas2021theoretical} and references therein), this chapter focuses on the selection of $\alpha_k$, allowing for $u_k$ to be either randomly selected or an approximation to the negative gradient (i.e., $u_k \approx -\nabla f(x_k)$).
+
+Intelligently choosing $\alpha_k$ can lead to convergence in fewer iterations, but this gain may be offset by the number of queries it takes. If we compute $u_k \approx -\nabla f(x_k)$, techniques such as backtracking line search from first-order optimization can be employed \cite{berahas2021global}. However, obtaining a sufficiently accurate approximation to $-\nabla f(x_k)$ requires $\Omega(d)$ queries per iteration \cite{berahas2021theoretical}, which is impractical for large $d$. On the other hand, when we take $u_k$ as a random vector, with high probability $u_k$ is almost orthogonal to $-\nabla f(x_k)$. Hence, $\alpha_k$ in \cite{ghadimi2013stochastic,nesterov2017random,bergou2020stochastic} is very small to guarantee descent at every iteration (possibly in expectation). Our approach differs from these methods.
+
+We propose using finite difference approximations to the first and second derivatives of the univariate function $\alpha \mapsto f(x_k +\alpha u_k)$ to compute a candidate $\alpha_{+}$ for $\alpha_k$. Specifically, we set
+\begin{align*}
+    \alpha_{+} & = \frac{d_r}{\hat{L}h_r},
+\end{align*}
+where
+\begin{align}
+    \quad d_{r} & := \frac{f(x_k+r u_k) - f(x_k-r u_k)}{2r},            \label{eq: FD def d_r}\\
+    h_{r}       & := \frac{f(x_k+r u_k) - 2f(x_k) + f(x_k-r u_k)}{r^2}, \label{eq: FD def h_r}
+\end{align}
+and $\hat{L}$ is a user-specified parameter. Computing $\alpha_+$ requires only three queries per iteration. This simple modification to the well-known Random Search algorithm \cite{ghadimi2013stochastic,nesterov2017random} (which takes $\alpha_k = d_r/\hat{L}$ or similar) can be viewed as an inexact one-dimensional Newton's method at each iteration. When encountering low curvature directions, $h_r$ is small and $\alpha_{+}$ is large, so this $\alpha_{+}$ may occasionally fail to guarantee descent. To remedy this, we combine our step-size rule with a simple safeguarding scheme based on the recently introduced Stochastic Three Point method \cite{bergou2020stochastic}, which guarantees $f(x_{k+1}) \leq f(x_k)$ at every iterate. Importantly, we show that $\alpha_{+}$ is a good candidate, i.e., $f(x_{k+1})$ is significantly smaller than $f(x_k)$ a positive proportion of the time. From this, we can quantify the expected total number of function queries required to reach a target solution accuracy. Because our method is a natural extension of Random Search that incorporates second derivative information, we dub it Curvature-Aware Random Search, or CARS.
+
+
+
+In addition to CARS, we propose an extension called CARS-CR (CARS with Cubic Regularization) and CARS-NQ (CARS with Numerical Quadrature). CARS-CR modifies the stochastic subspace cubic Newton method \cite{pmlr-v119-hanzely20a} into a zeroth-order method, and it is essentially CARS with an adaptive parameter $\hat{L}$ and achieves $\mathcal{O}(k^{-1})$ convergence for convex functions. CARS-NQ, on the other hand, incorporates Gauss-Hermite quadrature to estimate the derivatives of the smoothed function. It allows larger sampling radius and is particularly effective for non-convex functions of the form $f = f_{\mathrm{cvx}} + f_{\mathrm{osc}}$ where $f_{\mathrm{cvx}}$ is strongly convex and $f_{\mathrm{osc}}$ is rapidly oscillating.
+
+
+Our numerical experiments show that both CARS and its variants outperform state-of-the-art algorithms on benchmarks across various problem dimensions, demonstrating efficiency and robustness. Furthermore, our results on adversarial attacks show that CARS can be adapted to different sample distributions of $u_k$. We demonstrate that CARS performs well with a tailored distribution for a particular problem, an adversarial attack on a pre-trained neural network.
+
+\vspace{0.1in}
+\noindent\textit{\textbf{Organization.}}\quad
+This chapter is laid out as follows. In the rest of this section, we fix the notation and discuss prior art. In Section~\ref{sec:CARS}, we introduce the main algorithm, namely Curvature-Aware Random Search (CARS), along with its convergence analysis.
+Section~\ref{section:CARS_CR} extends CARS with Cubic Regularization (CARS-CR) for general convex functions. In Section~\ref{sec: proofs of main results}, we provide mathematical proofs to support our technical claims. Section~\ref{sec:ExperimentalResults} contains extensive numerical experiments that empirically verify our technical claims. Section~\ref{sec:conclusion} concludes the chapter.
+
+\subsection{Assumptions and Notation}
+\label{sec:Notation}
+In developing and analyzing CARS, we assume that $f$ is a convex and twice continuously differentiable function. We use $g(x) = \nabla f(x)$ and $H(x) = \nabla^2 f(x)$ briefly in the theoretical analysis of Section~\ref{section:convergence of CARS}. For a fixed initial point $x_0$, we define the level-set $\mathcal{Q} = \{x\in\mathbb{R}^d : f(x)\leq f(x_0)\}$, $\|\cdot\|$ as the Euclidean norm, and $f_{\star} := \min_{x\in\mathbb{R}^{d}}f(x)$. We say $x_k$ is an $\varepsilon$-optimal solution if $f(x_k) - f_{\star} \leq \varepsilon$. We use $\mathcal{D}$ to denote a probability distribution on $\mathbb{R}^{d}$. For any measurable set $S \subseteq \mathbb{R}^{d}$ with finite measure, $\mathrm{Unif}(S)$ denotes the uniform distribution over $S$. The unit sphere is written as $\mathbb{S}^{d-1}:= \{u: \|u\| = 1\}\subseteq \mathbb{R}^{d}$, and $e_1,\cdots, e_d$ represent the canonical basis vectors in $\mathbb{R}^{d}$. For two matrices $A$ and $B$, we write $A\preceq B$ if $B-A$ is positive semi-definite.
+
+
+\begin{definition}
+    \label{Definition: smoothness}
+    We say $f$ is $L$-smooth, $L>0$, if $H(x) \preceq L I_d$ for all $x \in \mathcal{Q}$.
+\end{definition}
+
+\begin{definition}
+    \label{Definition: strong convexity}
+    We say $f$ is $\mu$-strongly convex, $\mu>0$, if $\mu I_d \preceq H(x)$ for all $x \in \mathcal{Q}$.
+\end{definition}
+
+
+
+Under strong convexity, $H(z)$ is positive definite for all $ z\in \mathcal{Q}$; hence the following inner product and induced norm are well-defined for all $z \in \mathcal{Q}$:
+\begin{align*}
+    \langle x, y \rangle _{H(z)} & := \langle H(z)x, y \rangle  \qquad\textnormal{and}\qquad
+    \|x\|_{H(z)}^2 := \langle x, x\rangle_{H(z)}.
+\end{align*}
+
+Strong convexity also implies the following \cite[Proposition~2]{gower2019rsn}.
+\begin{lemma}[$\hat{L}$-Relative Smoothness and $\hat{\mu}$-Relative Convexity]
+    \label{lemma: Smoothness and convexity}
+    If $f$ is $\mu$-strongly convex, then $f$ is $\hat{\mu}$-relatively convex and $\hat{L}$-relatively smooth for some $\hat{L} \geq \hat{\mu}>0$, \textit{i.e.} for all $x, y \in \mathcal{Q} $
+    \begin{equation*}
+        \frac{\hat{\mu}}{2}\|x-y\|_{H(y)}^2 \leq  f(x) - f(y) - \langle g(y), x-y \rangle \leq \frac{\hat{L}}{2}\|x-y\|_{H(y)}^2.
+    \end{equation*}
+\end{lemma}
+
+We also make the following regularity assumption on $H$.
+\begin{assumption}\label{assumption: Holder continuity of Hessian}
+    $H$ is $a$-H\"{o}lder continuous for some $a>0$, \textit{i.e.}
+    \begin{equation}\label{assumption: eq: Holder continuity of H}
+        |{u}^{\top} (H(x) - H(y))\, {u}| \leq L_a \|x-y\|^{a}
+    \end{equation}
+    for any unit vector ${u}\in \mathbb{S}^{d-1}$ and $x, y \in \mathcal{Q}$.
+\end{assumption}
+H\"{o}lder continuity reduces to Lipschitz continuity when $a=1$. Assumption~\ref{assumption: Holder continuity of Hessian} can be used to refine the relative smoothness and relative convexity constants in a smaller region.
+
+\subsection{Prior Art}
+\label{sec:PriorArt}
+
+For a comprehensive introduction to DFO we refer the reader to \cite{conn2009introduction} or the more recent survey article \cite{larson2019derivative}. As mentioned above, our interest is in ZO approaches to DFO \cite{liu2020primer}, as these have low per-iteration query complexity (with respect to the dimension of the problem) and have been successfully used in modern machine learning applications, such as adversarial attacks on neural networks \cite{chen2017zoo,liu2018zeroth, cheng2019sign, cai2020zeroth,cai2021zeroth} and reinforcement learning \cite{salimans2017evolution,choromanski2018structured,fazel2018global}. Of particular relevance to this work is ZO algorithms based on {\em line search}:
+\begin{subequations}
+    \begin{align}
+         & \mathrm{Sample}\ u_k \ \mathrm{from}\  \mathcal{D}, \nonumber                                                \\
+         & \alpha_k \approx \alpha_{\star} = \argmin_{\alpha \in \mathbb{R}}f(x_k + \alpha u_k), \label{eq:line_search} \\
+         & x_{k+1} = x_{k} + \alpha_k u_k, \label{eq:generic_step}
+    \end{align}\label{eq:GenericDFOLS}
+\end{subequations}
+\hspace{-0.05in}which may be thought of as zeroth-order analogues of  coordinate descent \cite{nesterov2012efficiency}. All of the complexity results discussed below assume {\em noise-free} access to $f(x)$. The noisy case is more complicated, see \cite{jamieson2012query}.
+The first papers to use this scheme were \cite{karmanov1974convergence,karmanov1975convergence}, where convergence is discussed under the assumptions that $u_k$ is a descent direction\footnote{$u_{k}^{\top}\nabla f(x_k) < 0$.} for all $k$ and \eqref{eq:line_search} is solved sufficiently accurately. Assuming \eqref{eq:line_search} is solved {\em exactly}, \cite{mutsenieks1964extremal} proves this scheme finds an $\varepsilon$-optimal solution in $\mathcal{O}(\log(1/\varepsilon))$ iterations when $f$ is a quadratic function (see also \cite{schrack1976optimized} for a discussion of these results in English). In \cite{krutikov1983rate},  $\mathcal{O}(\log(1/\varepsilon))$ iteration complexity was proved assuming access to an approximate line search oracle
+that solves \eqref{eq:line_search} sufficiently accurately, for any strongly convex $f$, as long as $u_k$ are cyclically sampled coordinate vectors.  Similar ideas can be found in \cite{grippo1988global, grippo2007nonmonotone,grippo2015class}. More recently, \cite{stich2013optimization} studied \eqref{eq:GenericDFOLS} under the name {\em Random Pursuit} which assumes access to an approximate line search oracle satisfying either additive ($\alpha_{\star} - \delta \leq \tilde{\alpha} \leq \alpha_{\star} + \delta$) or multiplicative ($(1-\delta)\alpha_{\star} \leq \tilde{\alpha} \leq \alpha_{\star}$ and $\sign(\tilde{\alpha}) = \sign(\alpha_{\star})$) error bounds. They show Random Pursuit finds an $\varepsilon$-optimal solution in $\mathcal{O}(\log(1/\varepsilon))$ (resp. $\mathcal{O}(1/\varepsilon )$) iterations if $f$ is strongly convex (resp. convex). The use of $\mathcal{O}(\cdot)$ above suppresses the dependence of the query complexity on the dimension $d$. In all results stated, the query complexity scales at least linearly with $d$. This is unavoidable in DFO for generic $f$; see \cite{wang2018stochastic, balasubramanian2018zeroth,cai2020zeroth,cai2020scobo,cai2021zeroth,cartis2021scalable} for recent progress in overcoming this.
+
+We highlight a shortcoming of the aforementioned works: Although they provide essentially optimal bounds on the {\em iteration} complexity, they do not bound the {\em query} complexity. Indeed, the true query complexity will depend on the inner workings of the solver employed to solve \eqref{eq:line_search}. For example, \cite{stich2013optimization} reports each call to the line search oracle requires an average of $4$ function queries when $d \leq 128$ which increases to $7$ when $d = 1024$.  In contrast, CARS requires {\em only three queries} per iteration, independent of $d$. The recently introduced Stochastic Three Point (STP) method  \cite{bergou2020stochastic,bibi2020stochastic} also uses only three queries per iteration. However, STP is not scale invariant, and in practice we find its performance compares poorly against CARS (see Section~\ref{sec:ExperimentalResults}).
+
+\begin{table}[t]
+    \centering
+    \def\ROWCOLOR{black!10!white}
+    \begin{tabular}{l c c c c}
+        \toprule
+        Algorithm                                       & Strg. Convex                       & Convex                                 & Queries/Iter         & Line Search Oracle \\
+        \midrule
+        \rowcolor{\ROWCOLOR}
+        \cite{karmanov1975convergence}                  & $\mathcal{O}(\log(1/\varepsilon))$ & $\mathcal{O}(1/\varepsilon)$           & ---                  & Yes                \\
+        \cite{krutikov1983rate}                         & $\mathcal{O}(\log(1/\varepsilon))$ & ---                                    & ---                  & Yes                \\
+        \rowcolor{\ROWCOLOR}
+        NDFLS \cite{grippo2015class}                    & ---                                & ---                                    & $< \infty$           & No                 \\
+        Random Pursuit \cite{stich2013optimization}     & $\mathcal{O}(\log(1/\varepsilon))$ & $\mathcal{O}(1/\varepsilon)$           & 4--7\,(empirical)    & Yes                \\
+        \rowcolor{\ROWCOLOR}
+        ZOO-Newton \cite{chen2017zoo}                   & ---                                & ---                                    & $3$                  & No                 \\
+        Stochastic 3 Points \cite{bergou2020stochastic} & $\mathcal{O}(\log(1/\varepsilon))$ & $\mathcal{O}(1/\varepsilon)$           & 3                    & No                 \\
+        \rowcolor{\ROWCOLOR}
+        \textbf{CARS (proposed)}                        & $\mathcal{O}(\log(1/\varepsilon))$ & $\mathcal{O}(1/\varepsilon)^{\dagger}$ & $3$ or $4^{\dagger}$ & No                 \\
+        \bottomrule
+    \end{tabular}
+    \caption{Comparison of various line-search based ZO algorithms, all of which use random search directions.  We refer to algorithms without an agreed-upon name by the paper in which it first appeared. If a quantity ({\em e.g.} queries per iteration, convergence rate) is not explicitly computed we denote this with ``---''. Notes: $^{\dagger}$: refers to CARS-CR variant. }
+    \label{table: ZO_query_comparison}
+\end{table}
+
+We are partially motivated by ZOO-Newton \cite{chen2017zoo}, which is essentially CARS with $\mathcal{D} = \mathrm{Unif}(\{e_1,\cdots, e_d\})$. In \cite{chen2017zoo}, it is demonstrated empirically that ZOO-Newton performs well but no theoretical guarantees are provided. Our convergence guarantees for CARS imply convergence of ZOO-Newton as a special case. Many other works consider adapting Newton's method to the derivative-free setting. However, obtaining an estimate of the $d\times d$ Hessian $\nabla^{2}f(x_k)$ for general ({\em i.e.} unstructured) $f(x)$ is difficult. Thus, one needs to either use $\Omega(d^2)$ queries \cite{fabian1971stochastic} in order to obtain an accurate estimate of $\nabla^2f(x_k)$---far too many for most applications---or use a high-variance approximation to $\nabla^{2}f(x_k)$ \cite{spall2000adaptive,ye2018hessian,glasmachers2020hessian,zhu2019efficient,zhu2020hessian}. CARS sidesteps this dichotomy, as it applies Newton's method to a one-dimensional function. Thus the ``Hessian'' to be estimated is $1 \times 1$.
+
+\paragraph{Connection to Evolution Strategies.}\label{section: connection to ES}
+Evolution strategies (ES) are a class of derivative free optimization strategies inspired by biological evolution. Surprisingly, recent works \cite{salimans2017evolution} have shown that many ES algorithms are in fact equivalent to Random Search algorithm \cite{nesterov2017random} with Monte Carlo estimation of smoothed gradient. In this section we show how CARS can also be viewed as an ES. First, recall that the defining feature of an ES algorithm is that it maintains and iteratively updates a {\em population distribution}, {\em i.e.} a distribution over the search space $\mathbb{R}^{d}$, $p_{\theta}$. The goal of any ES is to find
+\begin{equation*}
+    \theta^{\star} = \argmin \{ F(\theta) = \mathbb{E}_{x \sim p_{\theta}}[f(x)]\}.
+\end{equation*}
+
+Now consider a Gaussian population distribution: $p_{\theta} = \mathcal{N}(\psi, r^2 A^2)$ where $\theta = (\psi, A)$. and $r>0$ is a small, fixed, constant. We assume $A$ is symmetric and positive definite. $F(\theta)$ can be written as
+\begin{equation*}
+    F(\psi, A) = \mathbb{E}_{v \sim \mathcal{N}(0,I_d)}[f(\psi + r Au)]
+    = \int f(\psi+r A u) \phi(u)~du,
+\end{equation*}
+where $\phi(u) = (2\pi)^{-d/2}\exp(-\|u\|^2/2)$ denotes the density of the $d$-dimensional standard normal distribution.
+Thus, we can regard $F$ as a smoothed version of $f$. Integration by parts reveals:
+\begin{equation}\label{eq:CARS_to_ES gradient wrt psi}
+    \nabla_{\psi} F(\psi, A) = r^{-1}\mathbb{E}\left[f(\psi+rAu)A^{-1}u\right].
+\end{equation}
+Noticing that $\mathbb{E}[f(\psi)A^{-1}u] = 0$ and $\mathbb{E}[f(\psi-r Au)A^{-1}u] = - \mathbb{E}[f(\psi+r Au)A^{-1}u]$, we can also write \eqref{eq:CARS_to_ES gradient wrt psi} as
+\begin{align*}
+    \nabla_{\psi} F(\psi, A)
+     & = \mathbb{E}\left[r^{-1}(f(\psi+r Au) - f(\psi)) A^{-1}u\right]             \\
+     & = \mathbb{E}\left[(2r)^{-1}(f(\psi+ r Au) - f(\psi- r Au)) A^{-1}u\right] \\
+     & = \mathbb{E}\left[d_r(\psi;Au) A^{-1}u\right]
+\end{align*}
+
+Fixing $A$ to be a constant matrix, and using a single sample to estimate $\nabla_\psi F(\psi)$ we obtain the NRS gradient estimator \cite{nesterov2017random}. Setting $A=I_d$ and using a population of size greater than one for the Monte Carlo approximation of the expectation, it becomes the evolution strategy introduced in
+\cite{salimans2017evolution}. Allowing $A$ to vary and using additional samples to approximate $A \approx H^{-1}$ yields the gradient estimator employed in \cite{ye2018hessian,shir2020covariance}. Note that they use the estimated Newton vector: $A^{2}\nabla_{\psi}F(\psi,A)$ as their descent direction.
+
+We now show the connection between this evolution strategy and CARS.  Again by integration by parts\footnote{This can also by deduced from Stein's formula \cite{stein1972bound, stein1981estimation}}:
+
+\begin{equation} \label{eq:CARS_to_ES hessian wrt psi}
+    \nabla_{\psi}^2 F(\psi,A) = r^{-2} A^{-1}\mathbb{E}[f(\psi+r A u) (u u^{\top} - I_d)]A^{-1}.
+\end{equation}
+For simplicity define $M := r^{-2}\mathbb{E}[f(\psi + r A u)(u u^{\top}-I_d)]$.
+Then, fixing $A$, the Newton vector $\vec{n}(\psi)$ for $F$ at $\psi$ is
+\begin{equation}\label{eq:CARS_to_ES newton vector}
+    \vec{n}(\psi) =    -(\nabla_{\psi}^2 F)^{-1}(\nabla_{\psi} F)
+    = A M^{-1} \mathbb{E}[d_r(\psi; Au)u].
+\end{equation}
+Note that $\mathbb{E}[u u^{\top} - I_d] = 0$, so we can subtract $2f(\psi)(u u^{\top} - I_d)$ from $M$ inside the expectation. Using symmetry:
+\begin{equation*}
+    M = \mathbb{E}[h_r(\psi; Au)(u u^{\top}-I_d)/2].
+\end{equation*}
+Finally, if we use a single sample $u$ for each expectation in \eqref{eq:CARS_to_ES newton vector},
+\begin{align*}
+    \vec{n}(\psi) & \approx -2\frac{d_r (\psi;Au)}{h_r (\psi;Au)} A(u u^{\top}-I_d)^{-1}u \stackrel{(a)}{=} - 2\frac{d_r (\psi;Au)}{h_r (\psi;Au)} \frac{1}{\|u\|_2^2 - 1}Au,
+\end{align*}
+where $(a)$ follows as $u$ is an eigenvector of $u u^{\top} - I_d$ with eigenvalue $\|u\|_2^2 - 1$.
+For $A=I_d$, we recover CARS, up to a constant factor
+coming from the difference between the Gaussian distribution and the uniform distribution on the unit sphere. Thus, CARS can be thought of as an ES maintaining an isotropic population distribution (as $I_d$ is the covariance) but taking a {\em Newton step} each iteration to update the mean. This interpretation suggests the following modification to CARS: one can also update $A$ using the stochastic gradient:
+\begin{equation*}
+    \nabla_{A}F(\psi,A) = 
+    A^{-1}\mathbb{E}[f(\psi+r A u) (u u^{\top} - I_d)],
+\end{equation*}
+Another natural extension of CARS in this direction is to use a population of size greater than one to estimate the Newton vector in \eqref{eq:CARS_to_ES newton vector}. This yields
+\begin{align}\label{eq: ES extension of CARS multiple samples}
+    \vec{n}(\psi) & \approx -2 A \left(\sum_{i=1}^{m} h_r (\psi; Au_i)(u_i u_i^{\top} - I_d)\right)^{-1} \left(\sum_{i=1}^{m} d_r (\psi; A u_i)u_i \right),
+\end{align}
+where the inverse of the sum of $m$ matrices in \eqref{eq: ES extension of CARS multiple samples} can be efficiently computed through, for instance, the Woodbury matrix formula.
+We leave the exploration of thes ideas to future work.
+
+\subsection{Main Contributions}
+We propose a simple and lightweight zeroth-order algorithm: CARS. To derive convergence rates for CARS we use a novel convergence analysis that hinges on the insight that CARS need only significantly decrease the objective function on a positive proportion of iterations. Our results allow for a H\"{o}lder continuous Hessian---a weaker assumption than the Lipschitz continuity typically considered in such settings. We also propose a cubic-regularized variant, CARS-CR. The analysis of CARS-CR extends that of the Stochastic Subspace Newton method \cite{pmlr-v119-hanzely20a} to the zeroth-order setting. The key ingredient is a careful handling of the errors introduced by replacing directional derivatives with their finite difference counterparts. We further propose an additional variant, CARS-NQ, in combination with numerical quadrature. This variant facilitates obtaining more precise approximation, thus permitting a larger smoothing parameter. Our theoretical results are corroborated by rigorous benchmarking on two datasets: Mor\'{e}-Garbow-Hillstrom \cite{more1981testing} and CUTEst \cite{gould2015cutest}. The benchmark results demonstrate that CARS outperforms existing line-search based ZOO algorithms. Our result is accompanied by an open-source implementation of CARS (and its variant), available online at \url{https://github.com/bumsu-kim/CARS}.

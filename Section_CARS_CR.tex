@@ -1,0 +1,99 @@
+\section{CARS with Cubic Regularization for General Convex Functions}
+\label{section:CARS_CR}
+Here, we adopt cubic regularization \cite{nesterov2006cubic, pmlr-v119-hanzely20a}, a technique to achieve global convergence of a second-order method for convex functions, in CARS and prove convergence.
+We drop strong convexity and assume only $L$-smoothness. We assume Lipschitz continuity of the Hessian (\emph{i.e.} $a=1$ in Assumption~\ref{assumption: Holder continuity of Hessian}) and let $M = L_1$ be the Lipschitz constant.
+Instead of using the second-order Taylor expansion \eqref{eq: T2 Taylor poly of 2nd order}, we now use
+\begin{equation}
+    P(\alpha; d, h) := d\alpha + \frac{1}{2}h\alpha^2 + \frac{M}{6}|\alpha|^3,
+\end{equation}
+with the exact derivatives $P(\,\cdot\,; d_0, h_0)$ and the finite difference approximations $P(\,\cdot\,; \pm d_{r_k}, h_{r_k})$.
+The method of Stochastic Subspace Cubic Newton (SSCN) \cite{pmlr-v119-hanzely20a} takes exact derivatives and uses the following inequality  \cite[Lemma~2.3]{pmlr-v119-hanzely20a}
+\begin{equation}\label{eq: cubic regularization bound}
+    f(x_{k} + \alpha u_k) \leq f(x_k) + P(\alpha; d_0(x_k; u_k), h_0(x_k; u_k))
+\end{equation}
+to derive the algorithm $x_{k+1} = x_k + \hat{\alpha}_{k} u_k$, where $\hat{\alpha}_{k} = \argmin_{\alpha} P(\alpha; d_0, h_0)$. We propose using $\alpha_{k}^{\pm} = \argmin_{\alpha}P(\alpha; \pm d_{r_k}, h_{r_k})$ in place of $\hat{\alpha}_k$. By solving $P^{\prime}(\alpha; \pm d_{r_k}, h_{r_k}) = 0$ we obtain
+\begin{align*}
+    \alpha_k^{\pm} = -\frac{\pm 2d_{r_k}}{h_{r_k} + \sqrt{h_{r_k}^2 + 2M|d_{r_k}|}}.
+\end{align*}
+This step-size is equal to $-\frac{\pm d_{r_k}}{h_{r_k}\hat{L}_k}$ with
+\begin{equation} \label{eq: L_k for CARS-CR}
+    \hat{L}_k = \frac{1}{2} +\sqrt{\frac{1}{4} + \frac{M|d_{r_k}|}{2h_{r_k}^2}},
+\end{equation}
+so it is CARS with this varying relative smoothness constant.
+We formalize this as Algorithm~\ref{alg:CARS-CR}.
+
+
+\begin{algorithm}
+    \caption{CARS with \textbf{C}ubic \textbf{R}egularization (CARS-CR)}
+    \label{alg:CARS-CR}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:}  $\varepsilon$: target accuracy; $x_0$: initial point; $r_0$: initial sampling radius; $M$: Lipschitz constant of Hessian.
+        \State Get the oracle $f(x_0)$.
+        \For{$k=0$ to $K$}
+        \State Sample $u_k$ from $\mathcal{D}_k$.
+        \State Set $r_k \leq \rho\sqrt{\varepsilon}/\sqrt{k+2}$ where $\rho = R/\sqrt{2B}$ as defined in Theorem~\ref{thm: Convergence of CARS-CR}.
+        \State Evaluate and store $f(x_{k} \pm r_k u_k)$.
+        \State Compute $d_{r_k}$ and $h_{r_k}$ using \eqref{eq:Compute_d} and \eqref{eq:Compute_h}.
+        \State Compute $\hat{L}_k$ using \eqref{eq: L_k for CARS-CR}.
+        \State Compute $x_{\textrm{CR}\pm, k} = x_{k} \pm \frac{d_{r_k}}{\hat{L}_kh_{r_k}}u_k$.
+        \State $x_{k+1} = \argmin\{f(x_{\textrm{CR}+, k}), f(x_{\textrm{CR}-, k}),f(x_k), f(x_{k} - r_k u_k), f(x_{k} + r_k u_k) \}$.
+        \EndFor
+        \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+\end{algorithm}
+
+To analyze CARS-CR (Algorithm~\ref{alg:CARS-CR}), we make a boundedness assumption.
+\begin{definition}
+    \label{def:R-bounded}
+    Recall that $\mathcal{Q} = \{x \in \mathbb{R}^d : f(x) \leq f(x_0)\}$. We say $f$ has an {\em $\mathcal{R}$-bounded level set} if the diameter of $\mathcal{Q}$ is $\mathcal{R} < \infty$.
+\end{definition}
+Without loss of generality, we may assume the distribution is normalized ({\em i.e.} $\|u\|=1$ w.p. $1$.) This is because we only need to bound the scale-free sampling radius $r_k\|u_k\|$, as before.
+To ensure that the finite difference error is insignificant, the sampling radius needs to be small enough. However, for a more concise analysis, it is helpful to have an upper bound that can be chosen arbitrarily. Let $R>0$ be an upper bound of $r_k$ for all $k\geq0$. Note that any $r_k$ selected by CARS-CR automatically satisfies $r_k \leq R$ (see line 5 of Algorithm~\ref{alg:CARS-CR}). Using this notation, we get:
+
+\begin{lemma}
+    [Finite difference error bound for the minimum of $P$]
+    \label{cor: P finite difference error bound}
+    Let $P(\,\cdot\,) = P(\,\cdot\,;d_0, h_0)$. Then for any $0 \leq r_k \leq R$,
+    \begin{equation}
+        \min(|P(\hat{\alpha}_k) - P(\alpha_k^+)|,\, |P(\hat{\alpha}_k) - P(\alpha_k^-)|) \leq \frac{2B}{R^2}r_k^2,
+        \label{eq: P_0_perturbation}
+    \end{equation}
+    where $B = \max(LR^2, MR^3, f(x_0) - f_\star)$.
+\end{lemma}
+
+If the sampling distribution is isotropic in expectation, \textit{i.e.} it satisfies
+$
+    \mathbb{E}\left[ {u_ku_k^{\top}} \right] = \frac{1}{d}I_d,
+$, we get the following descent lemma:
+\begin{theorem}[Expected descent of CARS-CR]
+    \label{thm: Expected descent of CARS-CR}
+    Suppose $f$ is convex, $L$-smooth, and has $M$-Lipschitz Hessian.
+    If $\mathcal{D}_k$ is isotropic in expectation,
+    then with Algorithm~\ref{alg:CARS-CR}, we have
+    \begin{equation}\label{eq: CR expected bound wrt z}
+        \mathbb{E}\left[f(x_{k+1})\mid x_k \right] \leq  \left(1-\frac{1}{d}\right)f(x_k) + \frac{1}{d}f(x_k + z)
+        + \frac{L}{2d}\|z\|^2 + \frac{M}{6d}\|z\|^3  + \frac{2B}{R^2}r_k^2
+    \end{equation}
+    for any $z \in \mathbb{R}^d$.
+\end{theorem}
+
+Finally, with decreasing $r_k$ as given in Algorithm~\ref{alg:CARS-CR}, we obtain the $\mathcal{O}(k^{-1})$ convergence rate for CARS-CR.
+
+\begin{theorem}[Convergence of CARS-CR]\label{thm: Convergence of CARS-CR}
+    Under the assumptions of Theorem~\ref{thm: Expected descent of CARS-CR}, further assume $f$ has an $\mathcal{R}$-bounded level set. Set $r_k \leq \frac{\rho\sqrt{\varepsilon}}{\sqrt{k+2}}$ where $\rho = \frac{R}{\sqrt{2B}}$.
+    Then, with Algorithm~\ref{alg:CARS-CR}, we have
+    \begin{equation}
+        \begin{split}
+            \mathbb{E}[f(x_K)] - f_\star \leq
+            &~\frac{ s^s (f(x_0)-f_\star) (1+ \log(K+2)) }{(K/d)^{s+1}}
+            + \frac{e^{s/K} (s+1)^2 L\mathcal{R}^2  }{2s(K/d)} \cr
+            &~+ \frac{e^{(s-1)/K} (s+1)^3 M \mathcal{R}^3  }{6(s-1)(K/d)^2}
+            + \frac{e^{2(s+1)/K} }{s+1}\varepsilon
+        \end{split}
+    \end{equation}
+    for any $s > 1$.
+    That is, for any $0<p<1$ there exists $C_p > 0$ such that  $\mathbb{E}[f(x_K)] - f_\star \leq \varepsilon$ if
+    \begin{equation} \label{eq: CR conv K depending on p}
+        K  \geq  C_p d \max \left\{ \frac{L\mathcal{R}^2}{\varepsilon} , \sqrt{\frac{M\mathcal{R}^3}{\varepsilon}} , \left(\frac{f(x_0)-f_\star}{\varepsilon}\right)^{p} \right\}.
+    \end{equation}
+\end{theorem}

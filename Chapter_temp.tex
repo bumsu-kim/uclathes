@@ -1,0 +1,121 @@
+
+
+\section{To be deleted later}
+{\begin{singlespace}
+\begin{theorem*}
+    Suppose $f$ is $\mu$-strongly convex and its Hessian is $a$-H\"{o}lder continuous. Suppose also that the sampling distribution $\mathcal{D}_k$ satisfies $\eta(g_k, H_k; \mathcal{D}_k) \geq \eta_{0} > 0$ and there exists $\gamma \in (0,1]$ such that
+    \begin{equation*}
+        p_{\gamma} := \inf_{k\geq 0} \mathbb{P}_{u_k\sim\mathcal{D}_k} \left[ |u_k^{\top}g_k| \geq \gamma\|u_k\|\|g_k\|\right] >0
+    \end{equation*}
+    for all $k\geq 0$. Define the scale-free sampling radius limit $C$ by
+    \begin{align*}
+        C := \min \{ C_{1,a} (\gamma \sqrt{2\mu \varepsilon})^{1/(1+a)}, C_{2,a} \mu^{1/a} \}.
+    \end{align*}
+    Then Algorithm~1 converges linearly. More specifically, if
+    \begin{align*}
+        K \geq \frac{2\hat{L}}{\eta_0 p_{\gamma}\hat{\mu}} \log\left(\frac{f(x_0) - f_\star}{\varepsilon} \right),
+    \end{align*}
+    we have $\mathbb{E}[f(x_K)] - f_\star \leq \varepsilon$.
+\end{theorem*}
+\end{singlespace}
+}
+\newpage
+Algorithm: 
+{\begin{singlespace}
+    \centering
+\begin{minipage}{.7\linewidth}
+    \begin{algorithm}[H]
+        \caption{\textbf{C}urvature-\textbf{A}ware \textbf{R}andom \textbf{S}earch (CARS)}
+            \begin{algorithmic}[1]
+                \State \textbf{Input:}  $x_0$: initial point; $\hat{L}$: relative smoothness parameter; $C$: scale-free sampling radius limit.
+                \State Get the oracle $f(x_0)$.
+                \For{$k=0$ to $K$}
+                \State Sample $u_k$ from $\mathcal{D}_k$.
+                \State Set $r_k \leq C/\|u_k\|$.
+                \State Evaluate and store $f(x_{k} \pm r_k u_k)$.
+                \State Compute $d_{r_k}$ and $h_{r_k}$
+                \State Compute $x_{\textrm{CARS}, k} = x_{k} - \frac{d_{r_k}}{\hat{L}h_{r_k}}u_k$.
+                \State $x_{k+1} = \argmin\{f(x_{\textrm{CARS}, k}),f(x_k), f(x_{k} \pm r_k u_k)\}$.
+                \EndFor
+                \State \textbf{Output:} $x_K$: estimated optimum point.
+            \end{algorithmic}
+    \end{algorithm}
+\end{minipage}
+\par
+\end{singlespace}
+}
+
+
+
+{\begin{singlespace}
+    \centering
+\begin{minipage}{.8\linewidth}
+\begin{algorithm}[H]
+    \caption{\textbf{S}tochastic \textbf{H}essian \textbf{I}nversion for \textbf{P}rojected \textbf{S}earch (SHIPS)}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $x_0$: initial point; $\mu$: sampling radius; $M$: the number of samples per iteration;  $\hat{L}$: relative smoothness parameter
+        \State Get the oracle $f(x_0)$.
+
+        \For{$k = 0$ to $K$}
+        \State Sample \emph{i.i.d.} directions $u_{k,i} \sim \textrm{Unif}(S^{d-1})$, $i=1,\cdots,M$.
+        \State Get oracles $f(x_{k} \pm \mu u_{k,i})$ for $i=1,\cdots,M$.
+        \State Estimate $g_k$ using the finite differences from the $2M$ measurements above.
+        \State Compute the sample mean to estimate the direction of the Newton vector
+        \[
+            \hat{u}_k = \frac{1}{M}\sum_{i=1}^{M} \frac{u_{k,i}^{\top}g_k}{(h_\mu(x_k;u_{k,i}))^p}u_{k,i}.
+        \]
+        \State  Set $u_k = \hat{u}_k / \|\hat{u}_k\|$.
+        \State  Perform additional queries along $u_k$ to update the solution using directional Newton, as in CARS (finite difference, 2 more queries)
+        \[
+            x_{k+1} = x_k - \frac{d_\mu(x_k;u_k)}{\hat{L}h_\mu (x_k; u_k)}u_k,
+        \]
+        or CARS-NQ (GH quadrature, $2q$ more queries)
+        \[
+            x_{k+1} = x_k - \frac{\tilde{F}_{u_k}'(0)}{\hat{L}_{u_k} \tilde{F}_{u_k}'' ( 0) } u_k.
+        \]
+        \EndFor
+        \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+\end{algorithm}
+\end{minipage}
+\par
+\end{singlespace}
+}
+
+
+{\begin{singlespace}
+    \centering
+\begin{minipage}{.7\linewidth}
+\begin{algorithm}[H]
+    \caption{Inspect as You Run}
+    \begin{algorithmic}[1]
+      \State \textbf{Input:} $x_0$: initial point; $r$: sampling radius; $R$: inspection radius; $\mathcal{A}$: One step of a DFO method, generating the next iterate; $n_k$: maximum number of inspections at $k$-th iteration; $\nu$: descent threshold
+      \State Get the oracle $f(x_0)$.
+      \For{$k = 1, \cdots, K$}
+            \State Compute $x_{k, 0} = \mathcal{A}(x_k)$
+            \State Generate $x_{k,j} \sim \textrm{Unif}(B(x_{k,0}, R))$, $j=1,\cdots,n_k$
+            \For {$j = 1, \cdots, n_k$}
+                \State Compute $f(x_{k,j})$ 
+                \If{$f(x_{k,j}) < f(x_{k,0}) - \nu$}
+                    \State Set $x_{k+1} = x_{k,j}$ and \emph{break}
+                \EndIf
+            \EndFor
+            \State If no successful inspections, set $x_{k+1} = x_{k,0}$
+      \EndFor
+       \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+    \end{algorithm}
+\end{minipage}
+\par
+\end{singlespace}
+}
+
+{\begin{singlespace}
+\begin{theorem*}
+    Let $\{x_k\}_{k=1}^{K}$ be the sequence of points obtained from Algorithm~3. Assume that no successful inspections occur for all $k \geq k_0$, and let $m$ be the total number of inspections for $k \geq k_0$. Suppose
+    \begin{align*}
+        \|x_{k} - x_K\| \leq D < R \quad \text{for all } k \geq k_0.
+    \end{align*}
+    Define $R_0 = R-D$ and choose a positive $\tilde{r} < D$. Then, $x_K$ is an $R_0$-local minimum up to $\eta = \bar{L}\tilde{r} + \nu$ with probability at least $1-\exp(- m (\tilde{r}/R)^d)$.
+\end{theorem*}\end{singlespace}
+}

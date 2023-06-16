@@ -1,0 +1,127 @@
+\section{More on Curvature: Randomized Matrix Inversion and SHIPS}\label{section:SHIPS}
+Recall that the Newton vector is the solution of the linear system $Ax=b$, where $A = H(x_k)$ and $b = - g(x_k)$.
+As we have discussed in Sections~\ref{section:convergence of CARS} and \ref{section: CARS-NQ},
+for any $z \in \mathbb{R}^d$, the scalar measurements $z^{\top}A z$ and $b^{\top}z$ can be easily estimated via finite difference (\eqref{eq: FD def d_r} and \eqref{eq: FD def h_r}, respectively) or numerical integration (Lemma~\ref{lemma: accuracy of GH quadrature}).
+
+Previously, the reconstruction of the covariance matrix $A$ from quadratic measurements of the form $u^{\top} A u$ has been studied, for instance, in \cite{chen2015exact}. However, the proposed method necessitates a low-rank assumption on the covariance matrix and involves solving an expensive sub-problem.
+Contrarily, we introduce a novel approach that is easy to compute, and provides an unbiased estimator for the inverse of a matrix, up to a scalar factor.
+Remarkably, this is achieved through quadratic measurements without any need for additional assumptions on the matrix, apart from symmetry and positive definiteness.
+
+In this section we present a novel randomized matrix inversion method that estimates $A^{-1}$ and $A^{-1}b$ using \emph{only those scalar measurements}.
+For the rest of this section, we assume $A$ is a general symmetric positive definite (SPD) matrix.
+
+\begin{theorem}[Randomized Matrix Inversion]
+    \label{thm:Reconstruction_of_Inverse_using_scalar_measurements}
+    Let $A \in \mathbb{R}^{d\times d}$ be SPD, and $p = d/2 + 1$.
+    If $u \sim \mathcal{N}(0,I_d)$ is a Gaussian random vector, and $w = u/\|u\| \sim \mathrm{Unif}(S^{d-1})$, then
+    \begin{equation} \label{eq:Reconstruction_of_Inverse}
+        \mathbb{E}\left[ \frac{\|u\|^{d}}{(u^{\top}Au)^p}uu^{\top} \right]
+        = \mathbb{E}\left[\frac{ww^{\top}}{(w^{\top}Aw)^p}\right]
+        = \frac{A^{-1}}{d \sqrt{\mathrm{det}(A)}} .
+    \end{equation}
+\end{theorem}
+
+In fact, the determinant of the right-hand-side of \eqref{eq:Reconstruction_of_Inverse}, $\mathrm{det}(d^{-1}A^{-1}/\sqrt{\mathrm{det}(A)})$, computes to $d^{-d}(\mathrm{det}(A))^{-p}$. Therefore, provided that the estimation of the expectation is accurate enough, we can estimate $\mathrm{det}(A)$ and also recover $A^{-1}$ without additional scalar factor.
+However, we don't need to perform this because we only need the \emph{direction} of the Newton vector. Recall that \eqref{eq: Define CARS} is invariant under scalar multiplication on $u$.
+
+And the following Corollary provides the direction of the Newton vector.
+\begin{corollary}[Solution of the linear system through scalar measurements]
+    \label{Cor:RandInv Ax=b}
+    Let $A$, $p$, $u$ and $w$ be as defined in Theorem \ref{thm:Reconstruction_of_Inverse_using_scalar_measurements}. Then
+    \begin{align}
+        \mathbb{E}\left[  \frac{\|u\|^{d} u^{\top}b}{(u^{\top}Au)^p}u \right]
+        = \mathbb{E}\left[\frac{w^{\top}b}{(w^{\top}Aw)^p}w\right]
+        = \frac{A^{-1}b}{d\sqrt{\mathrm{det}(A)}}. \label{eq: SHIPS Ax=b}
+    \end{align}
+\end{corollary}
+
+When the direction $u$ that we sample is parallel to the Newton vector, $\vec{n}$, CARS recovers the full Newton's method, assuming that the finite difference approximation for directional derivatives are exact.
+Combining this fact with the above stochastic Hessian inversion, which can provide $u$ whose direction is close to $\vec{n}$, we propose the following algorithm, coined Stochastic Hessian Inversion for Projected Search (SHIPS).
+
+\begin{algorithm}[t]
+    \caption{\textbf{S}tochastic \textbf{H}essian \textbf{I}nversion for \textbf{P}rojected \textbf{S}earch (SHIPS)}
+    \label{alg:RandInv}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $x_0$: initial point; $\mu$: sampling radius; $M$: the number of samples per iteration;  $\hat{L}$: relative smoothness parameter
+        \State Get the oracle $f(x_0)$.
+        \For{$k = 0$ to $K$}
+        \State Sample \emph{i.i.d.} directions $u_{k,i} \sim \textrm{Unif}(S^{d-1})$, $i=1,\cdots,m$.
+        \State Get oracles $f(x_{k} \pm r u_{k,i})$ for $i=1,\cdots,m$ ($2m$ queries).
+        \State \label{Alg: RandInv g_k estimation} Estimate $g_k$ using the $2m$ measurements above.
+        \State \label{Alg: RandInv sample mean} Compute the sample mean of \eqref{eq: SHIPS Ax=b} to estimate the direction of the Newton vector
+        \[
+            \hat{u}_k = \frac{1}{m}\sum_{i=1}^{m} \frac{u_{k,i}^{\top}g_k}{(h_r(x_k;u_{k,i}))^p}u_{k,i}.
+        \]
+        \State  Set $u_k = \hat{u}_k / \|\hat{u}_k\|$.
+        \State  Perform additional queries along $u_k$ to conduct CARS(-CR) (finite difference, 3(or 4) more queries)
+        \[
+            x_{k, \mathrm{CARS}} = x_k - \frac{d_r(x_k;u_k)}{\hat{L} h_r (x_k; u_k)}u_k,
+        \]
+        or CARS-NQ (GH quadrature, $2q+1$ more queries)
+        \[
+            x_{k, \mathrm{CARS}} = x_k - \frac{\mathcal{G}_{r}[\tilde{f}]^{\prime}(0)}{\hat{L}_{u_k} \mathcal{G}_{r}[\tilde{f}]^{\prime\prime}(0) } u_k.
+        \]
+        \State $x_{k+1} = \argmin\{f(x_k), f(x_{k} \pm r u_{k_i}), f(x_{k, \mathrm{CARS}}) \}$.
+        \EndFor
+        \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Discussion on SHIPS}
+One immediate advantage of SHIPS is the algorithm's potential for parallelization. The oracles at each iteration can be computed in parallel effortlessly. Furthermore, unlike other Newton-type methods, it does not need to store the whole Hessian (or its inverse) in memory.
+
+The gradient estimation $g_k$ in line \ref{Alg: RandInv g_k estimation} of Algorithm \ref{alg:RandInv} can be achieved via several methodologies, including linear interpolation or smoothing method. 
+For example, when the number of samples $m \leq d$, an estimation through linear interpolation can be given by solving
+$2r U_k g_k = F_k$,
+where $U_k$ is an $m\times d$ matrix with the $i$-th row being $u_{k.i}$, and $F_k$ is a $d$-vector whose $i$-th entry is $f(x_k + r u_{k,i}) - f(x_k - r u_{k,i})$.
+When a solution exists for this linear system, $u_{k,i}^{\top}g_k$ is just the directional finite difference, $(F_k)_i / (2r)$. 
+In such a case, there is no need to solve the linear system; the line~\ref{Alg: RandInv g_k estimation} can be bypaseed, and directly proceeding to line~\ref{Alg: RandInv sample mean}.
+
+Alternatively, $g_k$ can be estimated via a smoothing method incorporating Monte Carlo estimation. We have \cite{berahas2021theoretical}
+\[\nabla F(x) = \frac{d}{r} \, \mathbb{E}_{\,\mathrm{Unif}(S^{d-1})}[ f(x+\mu u) u ], \]
+where $F(x) = \mathbb{E}_{\,v\sim \mathrm{Unif}(B^d)}[f(x+r v)]$ is smoothed version of $f$ on a ball of radius $r$.
+We refer the interested reader to \cite{berahas2021theoretical} for a comparison between the interpolation method and the smoothing method.
+
+\subsection{Enhancing the Quality of Estimation via Adaptive Sampling}
+Let $B$ be a SPD matrix and consider $v \sim \mathcal{N}(0,B^{-2})$ by taking $v = B^{-1} u$, where $u$ is sampled from the standard normal distribution. Then Theorem~\ref{thm:Reconstruction_of_Inverse_using_scalar_measurements} can be rewritten as an expectation over $v$.
+
+\begin{corollary}[Randomized Matrix Inversion with $\mathcal{N}(0,B^{-2})$]
+    Let $A$, $p$, $u$ be as defined in Theorem~\ref{thm:Reconstruction_of_Inverse_using_scalar_measurements}. If $B$ is SPD and $v = B^{-1}u$, then
+    \begin{equation}\label{eq: randinv with nontrivial covariance}
+        \mathbb{E}_{v\sim \mathcal{N}(0,B^{-2})}\left[
+        \frac{\|Bv\|^d }{(v^{\top}Av)^p}vv^{\top}
+        \right] = \frac{\mathrm{det}(B)}{d \sqrt{\mathrm{det}(A)}} A^{-1}.
+    \end{equation}
+\end{corollary}
+\begin{proof}
+    Let $v = B^{-1}u$. Then $v \sim \mathcal{N}(0,B^{-2})$ and
+    \begin{align*}
+        \mathbb{E}_{v\sim \mathcal{N}(0,B^{-2})}\left[
+        \frac{\|Bv\|^d }{(v^{\top}Av)^p}vv^{\top}
+        \right]
+        &= \mathbb{E}_{u\sim \mathcal{N}(0,I_n)}\left[
+        \frac{\|u\|^d }{(u^{\top}B^{-\top}AB^{-1}u)^p}B^{-1}uu^{\top}B^{-1}
+        \right] \\
+        & = \frac{1}{d \sqrt{\mathrm{det}(B^{-\top}AB^{-1})}} A^{-1} \\
+        &= \frac{\mathrm{det}(B)}{d \sqrt{\mathrm{det}(A)}} A^{-1}.
+    \end{align*}
+\end{proof}
+
+An intriguing case occurs when $B = A^{1/2} = PD^{1/2}P^{\top}$. This results in a similar approach to evolution strategies where the covariance matrix approximates the inverse Hessian \cite{ye2018hessian,shir2020covariance}. We propose the adaptive sampling procedure based on this idea in Algorithm~\ref{alg:RandInv_AS}.
+
+\begin{algorithm}[t]
+    \caption{\textbf{R}andomized \textbf{I}nversion with \textbf{A}daptive \textbf{S}ampling (RIAS)}
+    \label{alg:RandInv_AS}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $M$: the number of samples per iteration;
+        \State Get $M_0 \approx A^{-1}$ using \eqref{eq:Reconstruction_of_Inverse}.
+
+        \For{$k = 0$ to $K$}
+        \State Find $B_k^{-1} = M_0^{1/2}$.
+        \State Get $M_k \approx A^{-1}$ using \eqref{eq: randinv with nontrivial covariance} with $B=B_k$.
+        \EndFor
+        \State \textbf{Output:} $M_K$: estimated inverse of $A$.
+    \end{algorithmic}
+\end{algorithm}
+
+However, the significance of the improvement resulting from this adaptive sampling remains uncertain in higher dimensions. This may be due to a large variance in estimating the inverse matrix. This aspect is left for future investigation.

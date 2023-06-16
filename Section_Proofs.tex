@@ -1,0 +1,471 @@
+\section{Proofs}
+\label{sec: proofs of main results}
+
+Here we collect the proofs of the results of Sections \ref{section:convergence of CARS} and \ref{section:CARS_CR}, and state and prove some auxiliary lemmas needed in the proofs of the main results. We begin with a lemma quantifying the expected descent given access to exact derivatives.
+
+\subsection{Proofs for Results in Section~\ref{section:convergence of CARS}}
+\begin{lemma}[Expected descent of CARS with exact derivatives]
+    \label{lemma: CARS-ED descent}
+    Let $u_k \sim \mathcal{D}_k$ and $x_{\mathrm{ED}, k}$ be the CARS step with exact derivatives
+    \begin{equation}
+        x_{\mathrm{ED}, k} = x_k - \frac{u_k^\top g_k}{\hat{L} u_k^\top H_k u_k}u_k.
+    \end{equation}
+    Then letting $\eta_k = \eta(g_k, H_k; \mathcal{D}_k)$,
+    \begin{equation}
+        \mathbb{E}\left[f(x_{\mathrm{ED},k}) \mid x_k \right] - f_{\star}\leq  \left(1 - \eta_k \frac{\hat{\mu}}{\hat{L}}\right)(f(x_k) - f_\star).
+    \end{equation}
+\end{lemma}
+
+\begin{remark}
+    Lemma~\ref{lemma: CARS-ED descent} is similar to \cite[Corollary~1]{gower2019rsn} and \cite[Corollary~1 part (ii)]{kozak2021stochastic}. However, Lemma~\ref{lemma: CARS-ED descent} allows for more general sampling distributions $\mathcal{D}$.
+\end{remark}
+
+\begin{proof}
+    From $\hat{\mu}$-relative strong convexity we have
+    \begin{align}
+        f_\star - f(x_k) & \geq \langle g_k, x_\star - x_k \rangle + \frac{\hat{\mu}}{2} \| x_\star - x_k \|_{H_k}^2 \geq -\frac{1}{2\hat{\mu}} \|g_k\|_{H_k^{-1}}^2,
+        \label{eq:Rearrange}
+    \end{align}
+    where the second inequality follows by taking $x = x_\star - x_k$ and $c = \hat{\mu}$ in the following general inequality \cite[Lemma~9]{gower2019rsn}:
+    \begin{equation*}
+        \argmin_{x \in \mathbb{R}^d} \,\, \langle g, x \rangle + \frac{c}{2} \|x\|_H^2 = - \frac{1}{c}H^{-1}g \quad \text{ if $H\succ 0$ and $c>0$}.
+    \end{equation*}
+    Rearranging \eqref{eq:Rearrange} yields
+    $ - \|g_k\|_{H_k^{-1}}^2 \leq 2\hat{\mu} (f_\star - f(x_k))$.
+    Let $M_k := \frac{u_k u_k^{\top}}{u_k^{\top} H_k u_k}$. Then, from $\hat{L}$-relative smoothness and \cite[Lemma~5]{gower2019rsn},
+    \begin{equation}
+        f(x_{\mathrm{ED}, k}) \leq  f(x_k) - \frac{1}{2\hat{L}} \|g_k\|^2_{M_k} = f(x_k) - \frac{1}{2\hat{L}} \frac{\langle u_k u_k^{\top} g_k, g_k\rangle }{u_k^\top H_k u_k}
+        = f(x_k) - \frac{1}{2\hat{L}} \frac{(u_k^\top g_k)^2}{u_k^{\top} H_k u_k}.
+        \label{eq:TakeCondExp}
+    \end{equation}
+    Now let $\mathbb{E}_k[\cdot] := \mathbb{E}[\cdot | x_k]$ and take the conditional expectation of both sides of \eqref{eq:TakeCondExp}:
+    \begin{align*}
+        \mathbb{E}_k\left[f(x_{\mathrm{ED}})\right]
+         & \leq f(x_k) - \frac{1}{2\hat{L}} \mathbb{E}_{k}\left[  \frac{(u_{k}^\top g_k)^2}{u_{k}^{\top} H_k u_{k}} \right] \\
+         & = f(x_k) - \frac{\eta(g_k, H_k; \mathcal{D}_k)}{2\hat{L}}\|g_k\|^2_{H_k^{-1}}                                    \\
+         & \leq f(x_k) - \eta_{k}\frac{\hat{\mu}}{\hat{L}}(f(x_k) - f_\star)
+    \end{align*}
+    Subtracting $f_\star$ from both sides yields the desired result.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm: linear descent of CARS at each step}]
+    In this proof, for notational convenience let $d_{0} = g_k^\top {u}_k$ for the first-order directional derivative, and $h_{0} = {u}_k^\top H_k {u}_k$ for the second-order, and denote $r_k$ by $r$. From the definition of $\hat{L}$-relative smoothness, how much we progress at each step can easily be described by a quadratic function $q(t)$:
+    \[
+        f(x_k) - f(x_k+tu_k) \geq q(t) := -d_{0}t - \frac{1}{2}\hat{L}h_{0} t^2.
+    \]
+    As in the exact derivatives case, the maximizer of $q$ is $t_\star = -d_{0}/ (\hat{L} h_{0})$, with corresponding maximum $q(t_\star) = d_{0}^2/(2 \hat{L} h_{0}) = \|g_k\|_{M_k}/(2\hat{L})$, where  $M_k := \frac{u_k u_k^{\top}}{u_k^{\top} H_k u_k}$ as before. Recall that $x_{\mathrm{CARS},k} = x_k-d_{r}/(\hat{L}h_{r}) u_k$. Our goal is to show that the finite difference estimate $t_{r} := -d_{r}/(\hat{L}h_{r})$ approximates $t_\star$ well enough so that $q(t_{r}) \geq q(t_\star)/2$.
+    Observe that if
+    \begin{equation}
+        |t_{r} / t_\star - 1| \leq \sqrt{1-c} \iff |t_{r}- t_\star|^2 \leq (1-c)t_\star^2
+        \label{eq:c_bound}
+    \end{equation}
+    holds for some $0 <c<1$, then by completing the square in $q(t)$:
+    \begin{equation*}
+        q(t_r) = -\frac{\hat{L}h_0}{2}(t_r -t_\star)^2 + q(t_\star) \geq -(1-c)q(t_\star) + q(t_\star) = cq(t_\star).
+    \end{equation*}
+    Because we want to show $q(t_r) \geq q(t_\star)/2$, it suffices to show \eqref{eq:c_bound} holds for $c=1/2$, {\em i.e.},
+    \begin{equation}\label{eq: proof goal -- cars str cvx}
+        \left|\frac{t_r}{t_\star} -1\right| = \left|\frac{d_r /d_0 }{ h_r / h_0} -1\right| \leq \sqrt{1 - \frac{1}{2}} = \frac{1}{\sqrt{2}}.
+    \end{equation}
+    To prove \eqref{eq: proof goal -- cars str cvx}, we further bound the left-hand side by the two separate (relative) finite difference errors.
+    Let $e_d$ and $e_h$ be the absolute errors in estimating $d_{0}$ and $h_{0}$, respectively, {\em i.e.} $e_d = |d_{0} - d_r|$ and $e_h = |h_{0} - h_r|$.
+    Then, when $e_h < h_0$, which will be shown shortly,
+    \begin{equation*}
+        \left|\frac{d_r /d_{0} }{ h_r / h_{0}}-1\right|
+        = \left| \frac{ -\frac{d_0-d_r}{d_0} + \frac{h_0-h_r}{h_0}}{1 - \frac{h_0-h_r}{h_0}}\right|
+        \leq \frac{e_d/|d_{0}|+e_h/h_{0}}{1-e_h/h_{0}},
+    \end{equation*}
+    and thus, for \eqref{eq: proof goal -- cars str cvx} we only need to prove
+    \begin{equation}\label{eq: sufficient condition for mu}
+        \frac{e_d}{|d_{0}|} + \left(1+\frac{1}{\sqrt{2}}\right)\frac{e_h}{h_{0}} \leq \frac{1}{\sqrt{2}}.
+    \end{equation}
+
+    Now we bound $e_d$ and $e_h$ using Taylor's theorem and Assumption~\ref{assumption: Holder continuity of Hessian}. Because we have
+    \begin{align} \label{eq: finite difference with Taylor's theorem}
+        f(x_k \pm r u_{k}) = f(x_k) \pm r g_k^{\top}u_{k} + r^2 \int_0^1 (1-t) u_{k}^{\top}H(x_k \pm tr u_{k})u_{k} \,dt,
+    \end{align}
+    we get the following representation for the error of the first-order directional derivative:
+    \begin{align*}
+        d_r - d_{0} & = \frac{f(x_k + r u_{k})-f(x_k - r u_{k})}{2r} - g_k^{\top}u_{k}                                        \\
+                    & = \frac{r}{2}\int_0^{1} (1-t) u_{k}^{\top}\left[H(x_k + tr u_{k}) - H(x_k - tr u_{k})\right]u_{k} \,dt.
+    \end{align*}
+    By Assumption~\ref{assumption: Holder continuity of Hessian},
+    $ \left|u_{k}^{\top} \left[H(x_k + tr u_{k}) - H(x_k - tr u_{k})\right] u_{k}\right| \leq L_a (2tr)^a\|u_{k}\|^{a+2} $
+    and therefore,
+    \begin{equation}\label{eq: d_mu - a bound}
+        e_d = |d_r - d_{0}| \leq   2^{a-1} L_ar^{a+1} \|u_{k}\|^{a+2} \int_0^1 (1-t)t^a\,dt
+        = \left(\frac{r\|u_k\|}{C_{1,a}}\right)^{1+a}\frac{\|u_k\|}{2\sqrt{2}}.
+    \end{equation}
+    Similarly, for the second-order directional derivative,
+    \begin{equation} \label{eq: h_mu - b bound}
+        e_h = |h_r - h_{0}| \leq  2 L_a r^{a} \|u_{k}\|^{a+2} \int_0^1 (1-t)t^a\,dt
+        = \left(\frac{r\|u_k\|}{C_{2,a}}\right)^{a}\frac{\|u_k\|^2}{2\sqrt{2}+2}
+    \end{equation}
+    We see that $r\|u_k\| \leq C = \min\{C_{1,a}(\gamma \sqrt{2\mu \varepsilon})^{1/(1+a)}, C_{2,a}\mu^{1/a} \}$ implies two separate bounds
+    \begin{equation}\label{eq: bound on e_d and e_h}
+        e_d \leq \frac{\gamma\sqrt{\mu\varepsilon}\|u_k\|}{2} \stackrel{(a)}{\leq} \frac{|d_0|}{2\sqrt{2}} \quad \text{ and } \quad e_h \leq \frac{\mu\|u_k\|^2}{2\sqrt{2} + 2} \stackrel{(b)}{\leq} \frac{h_0}{2\sqrt{2}+2},
+    \end{equation}
+    where (a) holds assuming $\mathcal{A}_k$ occurs and (b) follows from strong convexity:
+    \begin{equation}
+        h_0 = u_k^{\top}H_k u_k \geq \mu.
+    \end{equation}
+    As \eqref{eq: bound on e_d and e_h} implies \eqref{eq: sufficient condition for mu} we have proved the theorem.
+\end{proof}
+
+We now are ready to prove the convergence of CARS (Algorithm~\ref{alg:CARS}).
+\begin{proof}[Proof of Corollary~\ref{thm:convergence of cars; strongly cvx}]
+    From strong convexity
+    we have
+    \begin{equation*}
+        f_\star - f(x) \geq \langle g(x), x_{\star} - x \rangle + \frac{\mu}{2}\|x_{\star} - x\|^2
+        \geq -\frac{1}{2\mu}\|g(x)\|^2,
+    \end{equation*}
+    for any $x \in \mathbb{R}^d$, where the second inequality comes from
+    \begin{equation*}
+        \argmin_{x\in\mathbb{R}^d} \langle g, x \rangle + \frac{c}{2}\|x\|^2 = -\frac{1}{c}g.
+    \end{equation*}
+    Thus $\|g(x)\|^2 \geq 2\mu(f(x)-f_{\star})$. Taking expectation on both sides $\mathbb{E}[\|g(x_k)\|^2] \geq 2\mu (\mathbb{E}[f(x_k)]-f_{\star})$.
+
+    If $\|g(x_k)\|^2 \leq 2\mu\varepsilon$ at the $k$-th step with $k\leq K$, then $f(x_K) - f_{\star} \leq \varepsilon$ as $f(x_k)$ is monotonically decreasing by definition (See line 9 of Algorithm~\ref{alg:CARS}.) Thus we need only consider the case where $\|g(x_k)\|^2 > 2\mu\varepsilon$ for all $k<K$; because if the expectation of $f(x_K)$ conditioned on this event is less than or equal to $f_{\star} + \varepsilon$, then the total expectation is also bounded by the same value.
+
+    The key of the proof is that $\mathcal{A}_k$ occurs with probability at least $p_{\gamma} > 0$. Indeed, we have  $|u_k^{\top}g_k| \geq \gamma\|u_k\|\|g_k\|$ with probability at least $p_{\gamma}$, and since $\|g_k\| > \sqrt{2\mu\varepsilon}$,
+    \begin{align*}
+        \mathbb{P}[\mathcal{A}_k] \geq
+        \mathbb{P}\left[|u_{k}^{\top} g_{k}| \geq \gamma \|u_k\| \|g_k\| \geq  \gamma \|u_k\| \sqrt{2\mu\varepsilon}\right] \geq p_{\gamma}.
+    \end{align*}
+    If $\mathcal{A}_k$ occurs then by Theorem~\ref{thm: linear descent of CARS at each step}, we get
+    \begin{equation*}
+        \mathbb{E}[f(x_{k+1})|\mathcal{A}_k] - f_{\star} \leq \left(1-\eta_{\mathcal{D}}\frac{\hat{\mu}}{2\hat{L}}\right)(f(x_k)-f_{\star}).
+    \end{equation*}
+    If $\mathcal{A}_k$ does not occur then, as CARS is non-increasing, $f(x_{k+1}) \leq f(x_k)$. Thus
+    \begin{align*}
+        \mathbb{E}\left[f(x_{k+1}) \mid x_k \right] - f_{\star} & = \mathbb{E}[f(x_{k+1})- f_{\star}|\mathcal{A}_k]\mathbb{P}[\mathcal{A}_k] + \mathbb{E}[f(x_{k+1})- f_{\star}|\mathcal{A}_k^{c}]\mathbb{P}[\mathcal{A}_k^{c}]                           \\
+                                                                & \leq \left(1-\eta_{\mathcal{D}}\frac{\hat{\mu}}{2\hat{L}}\right)(f(x_k)-f_{\star})\mathbb{P}[\mathcal{A}_k] + \left(f(x_k) - f_{\star}\right)\left(1 - \mathbb{P}[\mathcal{A}_k]\right) \\
+                                                                & = \left(1-\eta_{\mathcal{D}}
+        \mathbb{P}[\mathcal{A}_k]\frac{\hat{\mu}}{2\hat{L}}\right)(f(x_k)-f_{\star})                                                                                                                                                                      \\
+                                                                & \leq \left(1-\eta_{\mathcal{D}} p_{\gamma}\frac{\hat{\mu}}{2\hat{L}}\right)(f(x_k)-f_{\star})                                                                                           \\
+        \Rightarrow  \mathbb{E}[f(x_{k+1})] - f_{\star}         & \leq \left(1-\eta_{\mathcal{D}}p_{\gamma}\frac{\hat{\mu}}{2\hat{L}}\right)^{k+1}(f(x_0)-f_{\star}),
+    \end{align*}
+    whence solving for $K$ in
+    \begin{equation}
+        \left(1-\eta_{\mathcal{D}}p_{\gamma}\frac{\hat{\mu}}{2\hat{L}}\right)^{K}(f(x_0)-f_{\star}) \leq \varepsilon
+    \end{equation}
+    completes the proof.
+\end{proof}
+
+
+
+
+\subsection{Proofs for Results in Section~\ref{section:CARS_CR}}
+Recall that:
+\begin{equation*}
+    P(\alpha; d, h) := d\alpha + \frac{1}{2}h\alpha^2 + \frac{M}{6}|\alpha|^3
+\end{equation*}
+(we write $P(\alpha)$ in place of $P(\alpha; d, h)$ when $d$ and $h$ are clear from context.) Define the map $\phi: \mathbb{R}\times\mathbb{R}_{\geq 0} \rightarrow \mathbb{R}$:
+\begin{equation*}
+    \phi(d, h) := \argmin_{\alpha}P(\alpha; d, h).
+\end{equation*}
+Note that not only $h_0 \geq 0$, but also $h_{r_k} \geq 0$ due to the convexity of $f$:
+\begin{equation*}
+    h_{r_k}(x_k; u_k) = \frac{2}{r_k^2}\left(\frac{f(x_k + r_k u_k) + f(x_k - r_k u_k)}{2} - f(x_k)\right) \geq 0.
+\end{equation*}
+Then $\hat{\alpha}_k = \phi(d_0, h_0)$ and $\alpha_k^{\pm} = \phi(\pm d_{r_k}, h_{r_k})$ by their definition.
+Along the way, we have useful identities for $\phi$:
+\begin{align}\label{eq: closed form expression for phi}
+    \phi(d, h) = \frac{\sign(d)}{M}\left(h - \sqrt{h^2 + 2M|d|}\right) = \frac{-2d}{h + \sqrt{h^2 + 2M|d|}},
+\end{align}
+and
+\begin{align}\label{eq: alpha Useful_ID}
+    \frac{M}{2}|\alpha_{\mathrm{min}}|\alpha_{\mathrm{min}} = -d - h\alpha_{\mathrm{min}}.
+\end{align}
+Note that \eqref{eq: closed form expression for phi} shows that $\phi$ is well-defined.
+We first describe the perturbation of $\phi$, and how $P$ behaves near its minimum.
+\begin{lemma}[Perturbation of $\phi$]\label{lemma: perturbation of phi}
+    Let $d, d' \in \mathbb{R}$ have the same sign and $h, h' \geq 0$.
+    Defining $S = \sqrt{h^2 + 2M|d|}$ and $S' = \sqrt{(h')^2 + 2M|d'|}$,
+    \begin{equation}
+        |\phi(d, h) - \phi(d', h')|
+        \leq \frac{|h-h'|}{M} + \frac{2|d-d'|}{S + S'}.
+    \end{equation}
+\end{lemma}
+\begin{proof}
+    Because $d$ and $d^{\prime}$ have the same sign, from \eqref{eq: closed form expression for phi}, we obtain that $\phi(d,h)$ and $\phi(d', h')$ have the same sign and so $|\phi(d,h) -\phi(d', h')| = \frac{1}{M}|S - S' - (h - h')|$, whence
+    \begin{align*}
+        |\phi(d,h) -\phi(d', h')| & = \frac{1}{M}\left|\left(S - S'\right)\frac{S + S'}{S + S'} - (h - h')\right| = \frac{1}{M}\left|\frac{S^2 - (S')^2}{S + S'} - (h - h')\right| \\
+                                  & = \frac{1}{M} \left|
+        \frac{(h-h')(h+h')}{S+S'} + \frac{2M(|d|-|d'|)}{S+S'} - (h-h')
+        \right|                                                                                                                                                                    \\
+                                  & \leq  \frac{1}{M} \left(1 - \frac{h+h'}{S+S'}\right)|h-h'| + \frac{2|d-d'|}{S+S'}
+        ~~ \leq \frac{|h-h'|}{M} + \frac{2|d-d'|}{S+S'},
+    \end{align*}
+    where the last inequality comes from that $0 \leq h + h' \leq S + S'$.
+\end{proof}
+We now analyze the effect of perturbations to $\alpha_{\mathrm{min}}$ on $P(\alpha)$, under the assumption that the perturbed value of $\alpha$ has the same sign as $\alpha_{\mathrm{min}}$.
+\begin{lemma}[Perturbation of $P(\alpha)$ near minimum]
+    \label{lemma: perturbation of P near min}
+    Let $d \in \mathbb{R}$ and $h \geq 0$. Define $\alpha_{\mathrm{min}} = \phi(d, h)$, and let $\alpha^{\prime} \in \mathbb{R}$ have $\sign(\alpha') = \sign(\alpha_{\mathrm{min}})$. Then
+    \begin{equation}\label{eq: Perturbation of P near min}
+        0 \leq P(\alpha';d,h) - P(\alpha_{\mathrm{min}};d,h)
+        \leq \frac{1}{2}(\alpha_{\mathrm{min}} - \alpha')^2 ( h + M|\alpha_{\mathrm{min}}| + \frac{M}{3}|\alpha_{\mathrm{min}} - \alpha'|).
+    \end{equation}
+\end{lemma}
+\begin{proof}
+    Let $\sigma = \sign(\alpha_{\mathrm{min}}) = \sign(\alpha')$. We write $P(\alpha_{\mathrm{min}})$, resp. $P(\alpha)$, for $P(\alpha_{\mathrm{min}};d,h)$, resp. $P(\alpha';d,h)$. Then,
+    \begin{align*}
+         & \quad~P(\alpha') - P(\alpha_{\mathrm{min}})                                                                                                                                                                                                       \\
+         & = d (\alpha' - \alpha_{\mathrm{min}}) + \frac{h}{2}(\alpha' - \alpha_{\mathrm{min}})(\alpha' + \alpha_{\mathrm{min}}) + \frac{\sigma M}{6}(\alpha' - \alpha_{\mathrm{min}})((\alpha')^2 + \alpha_{\mathrm{min}}^2 + \alpha_{\mathrm{min}}\alpha') \\
+         & = (\alpha' - \alpha_{\mathrm{min}})\left(d + \frac{h}{2}(\alpha' + \alpha_{\mathrm{min}}) + \frac{\sigma M}{6} ((\alpha')^2 + \alpha_{\mathrm{min}}^2 + \alpha_{\mathrm{min}} \alpha')\right).
+    \end{align*}
+    Using \eqref{eq: alpha Useful_ID}, we get
+    \begin{align*}
+        P(\alpha') - P(\alpha_{\mathrm{min}}) & = (\alpha' - \alpha_{\mathrm{min}})\left(
+        \frac{h}{2}(\alpha' - \alpha_{\mathrm{min}}) + \frac{\sigma M}{6}((\alpha')^2 - 2\alpha_{\mathrm{min}}^2 + \alpha_{\mathrm{min}} \alpha')
+        \right)                                                                                                                                                                                \\
+                                              & = \frac{1}{2}(\alpha'- \alpha_{\mathrm{min}})^2 \left(h + \frac{M}{3}|\alpha' + 2\alpha_{\mathrm{min}}| \right)                                \\
+                                              & \leq \frac{1}{2}(\alpha' - \alpha_{\mathrm{min}})^2 \left(h + M|\alpha_{\mathrm{min}}| + \frac{M}{3}|\alpha' - \alpha_{\mathrm{min}}| \right).
+    \end{align*}
+    Noting that $P(\alpha') - P(\alpha_{\mathrm{min}})\geq 0$ as $\alpha_{\mathrm{min}}$ minimizes $P(\alpha)$ we obtain the desired statement.
+\end{proof}
+
+From \eqref{eq: closed form expression for phi} we see that if $\sign(d_{r_k}) = \sign(d_0)$ then $\sign(\hat{\alpha}_k) = \sign(\alpha^{+}_k)$, whence we may use the perturbation bounds of Lemmas \ref{lemma: perturbation of phi} and \ref{lemma: perturbation of P near min}. If $\sign(d_{r_k}) = -\sign(d_0)$ then $\sign(\hat{\alpha}_k) = \sign(\alpha^{-}_k)$ and the conclusions of Lemmas \ref{lemma: perturbation of phi} and \ref{lemma: perturbation of P near min} still apply. We conclude that at least one of $\alpha_k^+$ and $\alpha_k^-$ is a good approximation for $\hat{\alpha}_k$, and formalize this as Lemma~\ref{cor: P finite difference error bound}.
+\begin{proof}[Proof of Lemma~\ref{cor: P finite difference error bound}]
+    First, assume that $\sign(d_0) = \sign(d_{r_k})$,
+    so $\sign(\hat{\alpha}_k) = \sign(\alpha_k^{+})$ by \eqref{eq: closed form expression for phi}. Thus, by Lemma~\ref{lemma: perturbation of P near min},
+    \begin{equation}\label{eq: P bound, to be used}
+        |P(\hat{\alpha}_k) - P(\alpha_k^+)| \leq
+        \frac{1}{2}(\alpha_k^+ - \hat{\alpha}_k)^2\left(h_0 + M |\hat{\alpha_k}| + \frac{M}{3}|\alpha_k^+ - \hat{\alpha}_k|\right).
+    \end{equation}
+    Since $h_0 = u_k ^{\top} H_k u_k \leq L$, it only remains to find appropriate bounds for $|\alpha_k^+ - \hat{\alpha}_k|$ and $\hat{\alpha}_k$. For notational convenience, define $S_r := \sqrt{h_r^2 + 2M|d_r|}$ for $r\geq 0$. As $f$ is convex we know that $|d_0| \leq \|g_k\| \leq \sqrt{2L(f(x_k)-f_\star)}$, see \cite[Prop. B.3]{bertsekas1997nonlinear} and so
+    \begin{align*}
+        M|\hat{\alpha}_k|
+         & \stackrel{\eqref{eq: closed form expression for phi}} = |S_0 - h_0| \leq \sqrt{S_0^2 - h_0^2}
+        = \sqrt{2M|d_0|}
+        \leq \sqrt{2M\|g_k\|}                                                                            \\
+         & \leq \sqrt{2M\sqrt{2L(f(x_k)-f_\star)}}
+        = \sqrt{\frac{2}{R^3}\left(MR^3\right)\sqrt{\frac{2}{R^2}(LR^2)(f(x_k)-f_\star)}}
+        \leq \frac{2^{3/4} B}{R^2},
+    \end{align*}
+    using the definition of $B = \max(LR^2, MR^3, f(x_k)-f_\star)$. Defining the finite difference errors $e_k^d = d_{r_k} - d_{0} $ and $e_k^h = h_{r_k} - h_{0}$,
+    Lemma~\ref{lemma: perturbation of phi} implies
+    \begin{equation}
+        |\hat{\alpha}_k - \alpha_k^+| \leq \frac{|e_k^h|}{M} + \frac{2|e_k^d|}{S_0 + S_{r_k}}.
+        \label{eq:Wednesday_1}
+    \end{equation}
+    As $\|u_k\|=1$ and $H$ is assumed Lipschitz continuous ({\em i.e.} $a=1$), from \eqref{eq: h_mu - b bound}, we have $|e_k^h| \leq \frac{Mr_k}{3}$ and the first term on the right-hand side of \eqref{eq:Wednesday_1} is bounded by $\frac{r_k}{3}$. Appealing to \eqref{eq: d_mu - a bound} we obtain $|e_k^d| \leq \frac{Mr_k^2}{6}$. We use this and the fact that $\sign(d_0) = \sign(d_k)$ to bound the second term on the right-hand side of \eqref{eq:Wednesday_1}:
+    \begin{align*}
+        \frac{2|e_k^d|}{S_0 + S_{r_k}} = \frac{2 |d_k - d_0|}{S_{0}+S_{r_k}}
+         & \leq \frac{2\left(\sqrt{|d_0|} + \sqrt{|d_{k}|}\right) \left|\sqrt{|d_0|}-\sqrt{|d_{k}|}\right|}{\sqrt{2M|d_0|} + \sqrt{2M|d_{k}|}} \\
+         & = \frac{2\left|\sqrt{|d_0|}-\sqrt{|d_{k}|}\right|}{\sqrt{2M}} \leq
+        \frac{2\, \sqrt{|d_0 - d_{k}|}}{\sqrt{2M}}
+        \leq 2\,\,\sqrt{\frac{1}{2M}\frac{Mr_k^2}{6}}
+        = \frac{r_k}{\sqrt{3}} .
+    \end{align*}
+    This provides a nice bound independent of $L$, $M$, and $R$; $ |\hat{\alpha}_k - \hat{\alpha}_k| \leq (1/3 + 1/\sqrt{3}) r_k < r_k.$  Combining everything with \eqref{eq: P bound, to be used}, we get
+    \begin{align*}
+        \left| P_0(\hat{\alpha}_k) - P_0(\alpha^{+}_k) \right|
+         & < \frac{1}{2}r_k^2\left( L + \frac{2^{3/4} B}{R^2} + \frac{M}{3}r_k\right)
+        ~~\leq \frac{1}{2}r_k^2\left(\frac{B}{R^2} + \frac{2^{3/4} B}{R^2} + \frac{B}{3R^2} \right) \\
+         & \leq \frac{Br_k^2}{R^2}\left(\frac{2}{3} + \frac{1}{2^{1/4}}\right)
+        ~~\leq \frac{2B}{R^2}r_k^2.
+    \end{align*}
+    If $\sign(d_0) = -\sign(d_{r_k})$ then $\sign(\hat{\alpha}_k) = \sign(\alpha^{-}_k)$, again by \eqref{eq: closed form expression for phi}. Lemma~\ref{lemma: perturbation of phi} and Lemma~\ref{lemma: perturbation of P near min} now yield
+    \begin{align}
+         & |\hat{\alpha}_k - \alpha_k^-| \leq \frac{|e_k^h|}{M} + \frac{2|d_0 - (-d_{r_k})|}{S_0 + S_{r_k}} \label{eq:Wednesday_2} \\
+         & |P(\hat{\alpha}_k) - P(\alpha_k^-)| \leq
+        \frac{1}{2}(\alpha_k^- - \hat{\alpha}_k)^2\left(h_0 + M |\hat{\alpha_k}| + \frac{M}{3}|\alpha_k^- - \hat{\alpha}_k|\right). \nonumber
+    \end{align}
+    The first term in \eqref{eq:Wednesday_2} can be bounded as before. Because $|d_0 + d_{r_k}| \leq |d_0 - d_{r_k}|\leq |e^d_k|$ as $d_0$ and $d_{r_k}$ have opposite signs, the second term in \eqref{eq:Wednesday_2} is bounded by $r_{k}/\sqrt{3}$ as before. Following the proof of the $\sign(d_0) = \sign(d_{r_k})$ case we conclude that,
+    \begin{equation*}
+        \left| P_0(\hat{\alpha}_k) - P_0(\alpha^{-}_k) \right| \leq \frac{2B}{R^2}r_k^2,
+    \end{equation*}
+    thus proving the theorem.
+\end{proof}
+
+
+
+\begin{proof}[Proof of Theorem~\ref{thm: Expected descent of CARS-CR}]
+    First, fix $u_k \in \mathbb{R}^d$ drawn from $\mathcal{D}_k$. Then, for $\sigma = -\sign(d_0(x_k;u_k))$ and any $z \in \mathbb{R}^d$,
+    \begin{align*}
+                                                                   & \quad~f(x_{k+1}) - f(x_k)                                                                                                                                                                                       \\
+                                                                   & \leq  f(x_k + \alpha_k^{\sigma} u) -f(x_k)
+        ~~ \leq P(\alpha_k^{\sigma}; d_0(x_k; u_k), h_0(x_k; u_k)) & \text{\small (Eq.~\eqref{eq: cubic regularization bound})}                                                                                                                                                      \\
+                                                                   & \leq P(\hat{\alpha}_k; d_0, h_0) + \frac{2B}{R^2}r_k^2                                                                                       & \text{(\small Lemma~\ref{cor: P finite difference error bound})} \\
+                                                                   & \leq P(u_k^{\top}z; d_0, h_0) + \frac{2B}{R^2}r_k^2                                                                                          & \text{\small (minimality of $\hat{\alpha}_k$)}                   \\
+                                                                   & = (z^{\top}u_k)(u_k^{\top}g_k) + \frac{1}{2}(z^{\top}u_k)(u_k^{\top}H_k u_k)(u_k^{\top}z) + \frac{M}{6}|u_k^{\top}z|^3 + \frac{2B}{R^2}r_k^2 & ~
+    \end{align*}
+    holds.
+    Now taking the expectation and using the isotropy condition:
+    \begin{align*}
+        \mathbb{E}\left[ f(x_{k+1}) \mid x_k \right] - f(x_k)
+         & \leq \frac{1}{d}z^{\top}g_k +
+        \frac{1}{2} z^{\top}\mathbb{E} \left[ u_k u_k^{\top} H_k u_k u_k^{\top} \right]z + \frac{M}{6}\mathbb{E}\left[|u_k^{\top} z |^3\right] + \frac{2B}{R^2}r_k^2.
+    \end{align*}
+    Note that the expectations above satisfy
+    $ \frac{1}{2} z^{\top}\mathbb{E} \left[ u_k u_k^{\top} H_k u_k u_k^{\top} \right]z \leq \frac{1}{2}z^{\top}\mathbb{E}\left[Lu_k u_k^{\top}\right]z = \frac{L}{2d}\|z\|^2$
+    and
+    $
+        \mathbb{E}\left[|u_k^{\top} z |^3\right]
+        \leq \mathbb{E}\left[|u_k^{\top} z |^2\right]\|z\| = \frac{1}{d}\|z\|^3,
+    $
+    respectively.
+    Therefore,
+    \begin{align}\label{eq: CR expected descent in z involving g and H}
+        \mathbb{E}\left[ f(x_{k+1}) \mid x_k \right] - f(x_k)
+         & \leq \frac{1}{d}z^{\top}g_k
+        + \frac{L}{2d}\|z\|^2 + \frac{M}{6d}\|z\|^3 + \frac{2B}{R^2}r_k^2.
+    \end{align}
+    Finally, using convexity of $f$, namely $f(x_k + z)-f(x_k) \geq z^{\top}g_k$, we obtain \eqref{eq: CR expected bound wrt z}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm: Convergence of CARS-CR}]
+    Let $\delta(x)$ denote the optimality gap $f(x) - f_\star$, and $\delta_k := \mathbb{E}[\delta(x_k)]$. Since Algorithm~\ref{alg:CARS-CR} has non-increasing $\delta_k$, we may assume $\delta_0 > \varepsilon$. Note that $\delta$ is convex. Letting $x_{\star}$ be any fixed minimizer ({\em i.e.} $f(x_{\star}) = f_{\star}$), we note that $\delta(x_\star) = 0$. For any $t_k \in (0, 1)$,  setting $z = t_k(x_\star - x_k)$ in Theorem~\ref{thm: Expected descent of CARS-CR} and defining $\Delta_k = \|x_\star - x_k\|$ yields
+    \begin{align*}
+         & \quad~\mathbb{E}\left[f(x_{k+1}) \,|\, x_k \right] - f_{\star} \cr
+         & \leq  (1-\frac{1}{d})f(x_k) + \frac{1}{d}f((1-t_k)x_k + t_kx_{\star}) - f_{\star}
+        + \frac{L}{2d} t_k^2 \Delta_k^2 + \frac{M}{6d} t_k^3 \Delta_k^3 + \frac{2B}{R^2} r_k^2
+    \end{align*}
+    and
+    \begin{align}
+         & \delta_{k+1} \leq (1-\frac{1}{d})f(x_k) +\frac{1-t_k}{d}f(x_k) + \frac{t_k}{d}f_{\star} - f_{\star}
+        + \frac{L}{2d} t_k^2 \Delta_k^2 + \frac{M}{6d} t_k^3 \Delta_k^3 + \frac{2B}{R^2} r_k^2 \label{eq:Thm3-convexity}                                                                                                     \\
+         & \delta_{k+1} \leq (1 - \frac{1}{d} + \frac{1}{d} - \frac{t_k}{d})f(x_k) - (1 - \frac{t_k}{d})f_{\star} + \frac{L}{2d} t_k^2 \Delta_k^2 + \frac{M}{6d} t_k^3 \Delta_k^3 + \frac{2B}{R^2} r_k^2 \label{eq:March-14} \\
+         & \delta_{k+1} \leq (1-\frac{t_k}{d})\delta_k +  \frac{L}{2d} t_k^2 \Delta_k^2 + \frac{M}{6d} t_k^3 \Delta_k^3 + \frac{2B}{R^2} r_k^2 \label{eq: CR conv before telescoping},
+    \end{align}
+    where in \eqref{eq:Thm3-convexity} we use the convexity of $f$, in \eqref{eq:March-14} we use $f(x_{\star}) = f_{\star}$,  and in \eqref{eq: CR conv before telescoping} we use the definition of $\delta_k$. We adopt an auxiliary sequence $\{\beta_k\}$ to make \eqref{eq: CR conv before telescoping} telescoping.
+    Let $s>1$, and define $\gamma_k = k^s$ and $\beta_k = \beta_0 + \sum_{j=1}^{k}\gamma_j$ with $\beta_0 = s^s d^{s+1}/(s+1)$, then $t_k = d\frac{\gamma_{k+1}}{\beta_{k+1}} \in (0, 1)$, and $1 - \frac{t_k}{d} = \frac{\beta_k}{\beta_{k+1}}$. We further note that:
+    \begin{equation}\label{eq: beta_k bounds}
+        \frac{k^{s+1}}{s+1} \leq \beta_0 + \int_{1}^{k}\frac{1}{x^s} dx \leq \beta_k \leq \beta_0 + \int_{2}^{k+1}\frac{1}{x^s}dx = \beta_0 + \frac{(k+1)^{s+1}}{s+1}
+    \end{equation}
+    Then by multiplying $\beta_{k+1}$ on both sides of \eqref{eq: CR conv before telescoping}, we get
+    \begin{align*}
+        \beta_{k+1}\delta_{k+1} \leq \beta_k \delta_k + \frac{Ld}{2}\frac{ \gamma_{k+1}^2}{\beta_{k+1}}\Delta_k^2
+        + \frac{Md^2}{6} \frac{ \gamma_{k+1}^3}{\beta_{k+1}^2}\Delta_k^3
+        + \frac{2B}{R^2} \beta_{k+1} r_k^2,
+    \end{align*}
+    and summing up from $k=0$ to $K-1$, we have
+    \begin{align}\label{eq: CR conv delta K bound as Sum}
+        \delta_K \leq \frac{\beta_0}{\beta_K}\delta_0 + \frac{Ld}{2\beta_K} \sum_{k=1}^{K} \frac{\gamma_k^2}{\beta_k}\Delta_{k-1}^2
+        + \frac{M d^2}{6\beta_K} \sum_{k=1}^{K} \frac{\gamma_k^3}{\beta_k^2}\Delta_{k-1}^3
+        + \frac{2B}{R^2 \beta_K} \sum_{k=1}^{K} \beta_{k}r_{k-1}^2.
+    \end{align}
+    First,
+    $  \frac{\beta_0}{\beta_K} \leq \frac{\beta_0}{\beta_K-\beta_0} \leq \frac{s^s}{(K/d)^{s+1}} $. Because the sequence $f(x_k)$ is non-increasing, $x_k \in \mathcal{Q}$ for all $k\geq 0$ and so $\Delta_k \leq \mathcal{R}$ (see Definition~\ref{def:R-bounded}).
+    Using $(1+\frac{1}{K})^s \leq e^{s/K}$,
+    \begin{align*}
+        \frac{1}{\beta_K}\sum_{k=1}^{K}\frac{\gamma_k^2}{\beta_k}\Delta_{k-1}^2
+         & \stackrel{\eqref{eq: beta_k bounds}}{\leq} \frac{\mathcal{R}^2(s+1)^2}{K^{s+1}} \sum_{k=1}^{K}\frac{k^{2s}}{k^{s+1}}
+        ~~= \frac{\mathcal{R}^2(s+1)^2}{K^{s+1}} \sum_{k=1}^{K} k^{s-1}                                                         \\
+         & \leq \frac{\mathcal{R}^2(s+1)^2}{K^{s+1}} \frac{(K+1)^s}{s}
+        ~~\leq \frac{\mathcal{R}^2e^{s/K} (s+1)^2}{sK}
+    \end{align*}
+    and
+    \begin{align*}
+        \frac{1}{\beta_K}\sum_{k=1}^{K}\frac{\gamma_k^3}{\beta_k^2}\Delta_{k-1}^3
+         & \stackrel{\eqref{eq: beta_k bounds}}{\leq} \frac{\mathcal{R}^3(s+1)^3}{K^{s+1}} \sum_{k=1}^{K}\frac{k^{3s}}{k^{2s+2}}
+        ~~= \frac{\mathcal{R}^3(s+1)^3}{K^{s+1}} \sum_{k=1}^{K} k^{s-2}                                                                \\
+         & \leq \frac{\mathcal{R}^3(s+1)^3}{K^{s+1}} \frac{(K+1)^{s-1}}{s-1} ~~\leq \frac{\mathcal{R}^3e^{(s-1)/K} (s+1)^3}{(s-1)K^2}.
+    \end{align*}
+    Lastly, the error due to the finite difference is controlled by the sampling radius:
+    \begin{align*}
+        \frac{2B}{R^2 \beta_K}\sum_{k=1}^{K}\beta_{k} r_{k-1}^2
+         & \stackrel{\eqref{eq: beta_k bounds}}{\leq} \frac{2(s+1) B\varepsilon \rho^2}{R^2 K^{s+1}} \sum_{k=1}^{K}\frac{(k+1)^{s}}{s+1} + \frac{2B\varepsilon \rho^2 \beta_0}{R^2 \beta_K}\sum_{k=1}^{K} \frac{1}{(k+1)} \\
+         & \leq \frac{\varepsilon e^{2(s+1)/K}}{s+1} + \frac{\varepsilon \beta_0 \log(K+2)}{\beta_K}.
+    \end{align*}
+    Combining the above with $\varepsilon < \delta_0$ we get
+    \begin{align}\label{eq: CR conv delta_K bound by four terms}
+        \delta_K & \leq \frac{ s^s \delta_0 (1+ \log(K+2)) }{(K/d)^{s+1}}
+        + \frac{e^{s/K} (s+1)^2 L\mathcal{R}^2  }{2s(K/d)} \cr
+                 & \quad~ + \frac{e^{(s-1)/K} (s+1)^3 M \mathcal{R}^3  }{6(s-1)(K/d)^2}
+        + \frac{e^{2(s+1)/K} }{s+1}\varepsilon .
+    \end{align}
+    When $K>s$, bounding the first three term in \eqref{eq: CR conv delta_K bound by four terms} by $\frac{s-1}{6(s+1)}$, and the last term by $\frac{s+3}{2(s+1)}$ gives the sufficient conditions on $K$:
+    \begin{equation*}
+        \frac{K}{d} \geq \max\left\{
+        \frac{3(s+1)^3 e}{s(s-1)}\frac{L\mathcal{R}^2}{\varepsilon},
+        \frac{(s+1)^2 \sqrt{e}}{(s-1)} \sqrt{\frac{M\mathcal{R}^3}{\varepsilon}},
+        s\left(\frac{6(s+1)}{s-1}\right)^{1/s} \left(\frac{\delta_0}{\varepsilon}\right)^{1/s}
+        \right\}
+    \end{equation*}
+    and $K \geq \frac{2(s+1)}{\log(1+s/2)}$, respectively.
+    These immediately give \eqref{eq: CR conv K depending on p}.
+\end{proof}
+
+\subsection{Proofs for Results in Section~\ref{section:SHIPS}}
+
+\begin{proof}[Proof of Theorem~\ref{thm:Reconstruction_of_Inverse_using_scalar_measurements}]
+    We first show (\ref{eq:Reconstruction_of_Inverse}) for a diagonal matrix $A = \mathrm{diag}(\lambda_1, \cdots, \lambda_d)$, and then extend the result to general SPD matrices.
+    Let $u = (u_1, \cdots, u_d)$ be a Gaussian vector and $q(u)$ denote the matrix in the expectation:
+    \[
+        q(u) = \frac{\|u\|^{d}}{(u^{\top}Au)^p}uu^{\top}.
+    \]
+    Then the $(i,j)$-th component $(q(u))_{ij}$ is ${\|u\|^{d} u_i u_j} / {(u^{\top}Au)^p}$.
+    To see the off-diagonal entries are zero, let $\tilde{u}$ denote the vector obtained by flipping the sign of $u_i$, $(u_1, \cdots, -u_i, \cdots, u_d)$.
+    Note that $\tilde{u}$ is also a Gaussian vector.
+    Then for $i\neq j$,  $\mathbb{E}[(q(u))_{ij}] = 0$ follows from $\mathbb{E}[(q(u))_{ij}] = \mathbb{E}[(q(\tilde{u}))_{ij}] = -\mathbb{E}[(q(u))_{ij}]$.
+
+    For the diagonal elements, it suffices to prove
+    \begin{equation} \label{eq:recon_inv_to_prove}
+        \mathbb{E}[(q(u))_{ii}] = \mathbb{E}\left[\frac{\|u\|^{d}u_i^2}{(\sum_{j=1}^{d}\lambda_j u_j^2)^p}\right]
+        = \frac{1}{d \lambda_i \sqrt{\prod_{j=1}^d \lambda_j}} = \frac{(A^{-1})_{ii}}{d \sqrt{\mathrm{det}(A)}}.
+    \end{equation}
+    We compute the expectation directly as follows, using that $u_i$'s are $\emph{i.i.d.}$ with the density $f(x) = \mathrm{exp}(-x^2/2)/\sqrt{2\pi}$:
+    \begin{align*}
+        \mathbb{E}[(q(u))_{ii}]
+         & =  \mathbb{E}\left[\frac{\|u\|^{d}u_i^2}{(\sum_{j=1}^{d}\lambda_j u_j^2)^p}\right]                                                  \\
+         & = \int_{\mathbb{R}^d} \frac{u_i^2}{\left(\sum_{j=1}^{d}\lambda_j u_j^2\right)^p} {\left(\sum_{j=1}^{d} u_j^2\right)^{p-1}} f(u_1)\cdots f(u_d)~du, %du_1 \,\cdots \,du_d,
+    \end{align*}
+    and with the change of variables $v_j = \sqrt{\lambda_j}u_j$ for $j=1,\cdots,d$, it computes
+    \begin{equation} \label{eq:recon_inv_integral_to_compute}
+        \frac{(2\pi)^{-d/2}}{\lambda_i \sqrt{\prod_{j=1}^d \lambda_j}} \int_{\mathbb{R}^d}{\frac{v_i^2}{\left(\sum_{j=1}^{d}v_j^2\right)^p}{\left(\sum_{j=1}^{d} \frac{v_j^2}{\lambda_j}\right)^{p-1}} \mathrm{exp}(-\sum_{j=1}^{d} \frac{v_j^2}{2\lambda_j})~dv.} %dv_1\,\cdots\, dv_d}.
+    \end{equation}
+    Thus we only need to prove the integral equals $d^{-1}(2\pi)^{d/2}$.
+    By rearranging (interchanging $v_i$ and $v_1$) and using a spherical coordinate,
+    \begin{align*}
+        v_1 & = r\cos (\phi_1)                                                                \\
+        v_j & = r\sin (\phi_1) \cdots \sin (\phi_{j-1}) \cos (\phi_j), &  & 2 \leq j \leq d-1 \\
+        v_d & = r \sin(\phi_1) \cdots \sin(\phi_{d-1}),
+    \end{align*}
+    we have $\left(\sum_{j=1}^{d}v_j^2\right)^p = r^{2p} = r^{d+2}$ and
+    \[
+        dv_1\,\cdots \,dv_d = r^{d-1} \prod_{j=1}^{d-2} \sin^{d-1-j}(\phi_j) \,dr\,d\phi_1 \,\cdots\, d\phi_{d-1}.
+    \]
+    Therefore, the integral in (\ref{eq:recon_inv_integral_to_compute}) becomes
+    \begin{align*}
+        \int_0^{2\pi}\int_0^{\pi}\cdots \int_0^{\pi}\int_{0}^{\infty}
+         & r^{d-1}\cos^2(\phi_1)\alpha^{d} \mathrm{exp}(-\frac{r^2 \alpha^2}{2}) \times    \\
+         & \prod_{j=1}^{d-2} \sin^{d-1-j}(\phi_j) ~  dr \, d\phi_1 \,\cdots \,d\phi_{d-1},
+    \end{align*}
+    %%%%% ANY IDEA ON WRITING THIS LONG INTEGRAL IN A PRETTIER FORM?? %%%%%%%
+    where
+    \begin{align*}
+        \alpha^2 & := r^{-2}\sum_{j=1}^{d} \frac{v_j^2}{\lambda_j}                                                                                                          \\
+                 & = \frac{\cos^2(\phi_1)}{\lambda_1} + \frac{\sin^2(\phi_1)\cos^2(\phi_2)}{\lambda_2} + \cdots + \frac{\sin^2(\phi_1)\cdots\sin^2(\phi_{d-1})}{\lambda_d}.
+    \end{align*}
+    Notice that the integral is the product of two quantities $(A)$ and $(B)$, where
+    \begin{align*}
+        (A)  := \int_0^{\infty} r^{d-1}\alpha^{d}\mathrm{exp}(-\frac{r^2 \alpha^2}{2}) \, dr,
+    \end{align*}
+    which computes $(A) = 2^{d/2 -1}\Gamma(n/2)$,
+    and
+    \begin{align*}
+        (B) := \int_0^{2\pi}\int_0^{\pi}\cdots \int_0^{\pi} \cos^2(\phi_1)
+        \prod_{j=1}^{d-2} \sin^{d-1-j}(\phi_j) ~ d\phi_1 \,\cdots \,d\phi_{d-1}.
+    \end{align*}
+    For the notational simplicity, let $P_m$ denote the definite integral $\int_0^{\pi} \sin^{m}(\theta) d\theta$. Then
+    \[
+        (B) = 2\pi P_1 P_2 \cdots P_{d-3} (P_d - P_{d-2}),
+    \]
+    from $\cos^2(\phi_1) = 1 - \sin^2(\phi_1)$.
+    Also note that from integrating by parts,
+    \[P_d = \frac{d-1}{d} P_{d-2}\]
+    and thus $(B) =  2\pi d^{-1} P_1 P_2 \cdots P_{d-2}.$ But the product $2\pi P_1 \cdots P_{d-2}$ is exactly the surface area of the unit sphere,
+    $2 \pi^{d/2} \Gamma (d/2)^{-1}.$
+    Therefore,  the integral in (\ref{eq:recon_inv_integral_to_compute}) is precisely $d^{-1}(2\pi)^{d/2}$ and this proves the proposition for diagonal $A$.
+
+    Finally, let $A$ be a general SPD matrix. Then $A$ admits the eigendecomposition $A = P D P^{\top}$, where $PP^{\top} = P^{\top}P = I_d$, and $D$ is diagonal. Then $v = P^{\top} u$ still follows the standard normal distribution. Therefore,
+    \[
+        \mathbb{E}[q(u)] = P^{\top} \mathbb{E}\left[ \frac{\|v\|^{d}}{(v^{\top}Dv)^p}vv^{\top} \right]  P =
+        \frac{PD^{-1}P^{\top}}{d \sqrt{\mathrm{det}(D)}} = \frac{A^{-1}}{d \sqrt{\mathrm{det}(A)}}.
+    \]
+    This finishes the proof.
+\end{proof}

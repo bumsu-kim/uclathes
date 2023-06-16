@@ -1,0 +1,209 @@
+\section{Curvature-Aware Random Search}\label{sec:CARS}
+Given $u_k$ sampled from $\mathcal{D}$, consider the one-dimensional Taylor expansion:
+\begin{equation} \label{eq: T2 Taylor poly of 2nd order}
+    T_{2}(\alpha;x_k,u_k) := f(x_k) + \alpha u_k^{\top} g_k + \frac{\alpha^2}{2} u_k^{\top} H_k u_k \approx f(x_k + \alpha u_k).
+\end{equation}
+CARS selects $\alpha_k \approx \argmin_{\alpha}T_{2}(\alpha;x_k,u_k)$. The exact minimizer  $u_k^{\top} g_k/u_k^{\top} H_k u_k$ depends on unavailable quantities. CARS uses $\alpha_k = d_{r_k}/h_{r_k}$, where $d_{r}$ and $h_{r}$ are finite difference approximations:
+\begin{align}
+    \begin{split}
+        d_{r_k}(x_k;u_k) &:= \frac{f(x_k+r_k u_k) - f(x_k-r_k u_k)}{2r_k}
+        = u_k^{\top}g_k + \mathcal{O}(r_k^2\|u_k\|^2),
+    \end{split} \label{eq:Compute_d} \\
+    \begin{split}
+        h_{r_k}(x_k;u_k) & := \frac{f(x_k+r_k u_k) - 2f(x_k) + f(x_k-r_k u_k)}{r^2}
+        = u_k^{\top}H_k u_k + \mathcal{O}(r_k^2\|u_k\|^2).
+    \end{split}\label{eq:Compute_h}
+\end{align}
+(We write $d_{r_k}$ and $h_{r_k}$, in place of $d_{r_k}(x_k;u_k)$ and $h_{r_k}(x_k;u_k)$ when $x_k$ and $u_k$ are clear from context.) Thus each iteration of CARS is a zeroth-order analogue of a single iteration of Newton's method applied to $f$ restricted to the line spanned by $u_k$. As is well-known \cite{nesterov2006cubic}, pure Newton's method may not converge. So, following \cite{gower2019rsn} we add a fixed step-size $1/\hat{L}$ and define:
+\begin{equation}
+    x_{\mathrm{CARS, }k} = x_k - \frac{d_{r_k}}{\hat{L}h_{r_k}} u_k.
+    \label{eq: Define CARS}
+\end{equation}
+
+We allow the distribution $\mathcal{D}$ to be iteration dependent, {\em i.e.} $u_k$ can be sampled from $\mathcal{D}_k$. In computing $d_{r_k}(x_k)$ and $h_{r_k}(x_k)$, CARS queries $f$ at the symmetric points $x_k + r_k u_k$ and $x_k - r_k u_k$.
+We extend STP~\cite{bergou2020stochastic} into a {\em safeguarding mechanism} for CARS and
+choose the next iterate
+\begin{equation*}
+    x_{k+1} = \argmin \{ f(x_{\mathrm{CARS}, k}), f(x_k), f(x_k - r_k u_k), f(x_k + r_k u_k) \},
+\end{equation*}
+which ensures monotonicity:
+$f(x_0)\geq f(x_1) \geq f(x_2) \geq \cdots $. CARS requires two input parameters, $\hat{L}$ and $C$. Ideally, $\hat{L}$ should be the relative smoothness parameter (see Lemma~\ref{lemma: Smoothness and convexity}), although CARS-CR (see Section~\ref{section:CARS_CR}) introduces a mechanism for selecting $\hat{L}$ adaptively. The selection of $C$ is the subject of the next section.
+
+\begin{algorithm}[H]
+    \caption{\textbf{C}urvature-\textbf{A}ware \textbf{R}andom \textbf{S}earch (CARS)}
+    \label{alg:CARS}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} $x_0$: initial point; $\hat{L}$: relative smoothness parameter,
+        $C$: scale-free sampling radius limit.
+        \State Get the oracle $f(x_0)$.
+        \For{$k=0$ to $K$}
+        \State Sample $u_k$ from $\mathcal{D}_k$.
+        \State Set $r_k \leq C/\|u_k\|$.
+        \State Evaluate and store $f(x_{k} \pm r_k u_k)$.
+        \State Compute $d_{r_k}$ and $h_{r_k}$ using \eqref{eq:Compute_d} and \eqref{eq:Compute_h}.
+        \State Compute $x_{\textrm{CARS}, k} = x_{k} - \frac{d_{r_k}}{\hat{L}h_{r_k}}u_k$.
+        \State $x_{k+1} = \argmin\{f(x_{\textrm{CARS}, k}),f(x_k), f(x_{k} - r_k u_k), f(x_{k} + r_k u_k) \}$.
+        \EndFor
+        \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Guarantees}\label{section:convergence of CARS}
+
+Before proceeding we list two necessary assumptions on $\mathcal{D}_k$. To describe the assumptions,
+introduce:
+\begin{align}
+    \eta( g, H ; \mathcal{D}) = \mathbb{E}_{u \sim \mathcal{D}} \left[ \frac{(u^\top g)^2}{(u^{\top} H u)  (g^{\top}H^{-1}g) } \right]. \label{eq:Def of eta}
+\end{align}
+By Cauchy-Schwarz $\eta(g,H;\mathcal{D}) \leq 1$ for all $g$, $\mathcal{D}$, and positive definite $H$.
+We use $\eta$ to measure the quality of the sampling distribution $\mathcal{D}$ with respect to the Newton vector $H^{-1}g$, and it is exactly 1 when all $u\sim \mathcal{D}$ are parallel to $H^{-1}g$. Our analysis assumes $\eta(g,H;\mathcal{D})$ is bounded away from zero, and this property holds for common choices of $\mathcal{D}$ as shown in Lemma~\ref{lemma: Lower bound eta}. Since
+replacing $(r_k, \mathcal{D}_k)$ by $(\beta^{-1}r_k, \beta\mathcal{D}_k)$, for any $\beta >0$, will not affect CARS, we use the {\em{scale-free sampling radius}}, $r_k\|u_k\|$,
+and define the following constants depending on the H\"{o}lder continuity of $H$:
+\begin{align*}
+    C_{1,a} = \left(\frac{(a+1)(a+2)}{2^{1/2+a}L_{a}}\right)^{1/(1+a)} \text{ and }\quad C_{2,a} = \left( \frac{(a+1)(a+2)}{4(\sqrt{2}+1)L_{a}} \right)^{1/a}.
+\end{align*}
+Our analysis requires us to define the following sampling radius limit, $C$, which also depends on the target accuracy $\varepsilon$ and a free parameter $\gamma \in (0,1]$:
+\begin{align}\label{eq: Scale-Free Sampling Radius Limit}
+    C := \min \{ C_{1,a} (\gamma \sqrt{2\mu \varepsilon})^{1/(1+a)}, C_{2,a} \mu^{1/a} \}.
+\end{align}
+CARS uses $C$ to choose the sampling radius $r_k\|u_k\|$ {\em after} sampling $u_k$ (see Line 6 of Algorithm~\ref{alg:CARS}). For instance, when $H$ is Lipschitz continuous, this rule gives $r_k \|u_k\| = \mathcal{O}(\varepsilon^{1/4})$. Note that $C$ is scale-invariant, {\em i.e.} replacing $(f, \varepsilon)$ by $(\lambda f, \lambda\varepsilon)$ for any $\lambda>0$ does not change $C$.
+
+\begin{theorem}[Expected descent of CARS]
+    \label{thm: linear descent of CARS at each step}
+    Suppose $f$ is $\mu$-strongly convex and its Hessian, $H$, is $a$-H\"{o}lder continuous. Suppose further that $\eta(g_k, H_k; \mathcal{D}_k) \geq \eta_{0} > 0$. Let $\gamma \in (0,1]$ and $\varepsilon$ be the target accuracy. Take the scale-free limit of sampling radius $C$ in  \eqref{eq: Scale-Free Sampling Radius Limit}. Let $x_{\mathrm{CARS}, k}$ be as in \eqref{eq: Define CARS} and let $\mathcal{A}_k$ denote the event:
+    \begin{equation} \label{eq: condition on u}
+        \gamma \|u_k\| \sqrt{2\mu\varepsilon} \leq |{u}_k^{\top}g_k|.
+    \end{equation}
+    Then,
+    \begin{equation}
+        \mathbb{E}\left[f(x_{\mathrm{CARS}, k}) - f_\star \mid \mathcal{A}_k \right] \leq \left(1 - \eta_{0}\frac{\hat{\mu}}{2\hat{L}}\right)(f(x_k) - f_\star).
+        \label{eq: CARS Descent}
+    \end{equation}
+\end{theorem}
+In words, by limiting the sampling radius to $C$, and conditioning on $u_k$ being ``good enough'' (\emph{i.e.} $\mathcal{A}_k$ occurs,) we obtain linear descent in  expectation. The proof of Theorem~\ref{thm: linear descent of CARS at each step} can be found in Section~\ref{sec: proofs of main results}. Although $\mathcal{A}_k$ does not occur with probability $1$, we show $\mathcal{A}_k$ occurs for a positive fraction of CARS iterations. When $\mathcal{A}_k$ does not occur, the safeguarding mechanism (Line 10 of Algorithm~\ref{alg:CARS}) still ensures monotonicity: $f(x_{k+1}) \leq f(x_k)$. This reveals the key idea behind CARS: {\em it exploits good search directions $u_k$ when they arise yet is robust against poor search directions.} Carefully quantifying this intuition, we have:
+
+
+\begin{corollary}[Convergence of CARS]\label{thm:convergence of cars; strongly cvx}
+    Take the assumptions of Theorem~\ref{thm: linear descent of CARS at each step}. Suppose further that there exists $\gamma \in (0,1]$ such that
+    \begin{equation}\label{eq: p_gamma defining inequality}
+        p_{\gamma} := \inf_{k\geq 0} \mathbb{P}_{u_k\sim\mathcal{D}_k} \left[ |u_k^{\top}g_k| \geq \gamma\|u_k\|\|g_k\|\right] >0
+    \end{equation}
+    for all $k\geq 0$, and use $\gamma$ to define $C$ in \eqref{eq: Scale-Free Sampling Radius Limit}.
+    Then, Algorithm~\ref{alg:CARS} converges linearly. More specifically,
+    for any
+    \begin{align*}
+        K \geq \frac{2\hat{L}}{\eta_0 p_{\gamma}\hat{\mu}} \log\left(\frac{f(x_0) - f_\star}{\varepsilon} \right),
+    \end{align*}
+    we have $\mathbb{E}[f(x_K)] - f_\star \leq \varepsilon$.
+\end{corollary}
+\noindent The additional assumption on $\mathcal{D}_k$ {\em i.e.} the existence of $\gamma$, is very mild, and is discussed in Sec.~\ref{subsec: sampling distribution}.
+
+\subsection{Further Results on the Sampling Distribution}\label{subsec: sampling distribution}
+The speed of convergence of CARS depends crucially on the lower bounds $\eta_0$ and $p_{\gamma}$ (see \eqref{eq:Def of eta} and \eqref{eq: p_gamma defining inequality}). The following Lemma computes $\eta_0$ for several commonly used distributions.
+
+\begin{lemma}
+    \label{lemma: Lower bound eta}
+    \begin{enumerate}
+        \item (Isotropic distributions) When
+              \begin{align*}
+                  \mathcal{D} =  \unif(\mathbb{S}^{d-1}), \textnormal{~~}\unif(\{e_1, \cdots, e_d\}), \textnormal{~~} \mathcal{N}(0, I_d), \textnormal{~~or~~} \unif(\{\pm 1\}^d),
+              \end{align*}
+              we have $\eta(g,H;\mathcal{D}) \geq {\mu}/({dL})$. The distributions in the above equation are uniform on sphere, coordinate directions, Gaussian, and Rademacher, respectively.
+        \item (Approximate gradient direction) If $\mathcal{D}$ satisfies
+              \begin{align}\label{eq: D approximates gradient}
+                  \mathbb{E}_{u\sim \mathcal{D}}\left[ \left(\frac{|u^\top g|}{\|u\|\|g\|}^2\right) \right] \geq \beta >0
+              \end{align}
+              for some $\beta>0$,
+              then $\eta(g,H;\mathcal{D}) \geq {\beta \mu}/{L}$.
+        \item (Newton direction) When $u$ is parallel to $H^{-1}g$ with probability 1, we have $\eta(g,H;\mathcal{D}) = 1$.
+    \end{enumerate}
+\end{lemma}
+\begin{proof}
+    Since $u^{\top} H u \leq L\|u\|^2$ and $ g^{\top}H^{-1}g \leq \mu^{-1}\|g\|^2 $,
+    \begin{align}\label{eq: eta with curvature term and angle btw gradient}
+        \eta(g,H;\mathcal{D}) \geq \frac{\mu}{L} \,\, \mathbb{E}_{u\sim \mathcal{D}}\left[ \left(\frac{|{u}^\top {g}|}{\|u\|\|g\|}\right)^2 \right].
+    \end{align}
+
+    \begin{enumerate}
+        \item When $\mathcal{D} = \mathcal{N}(0,I_d) $ or $\unif(\mathbb{S}^{d-1})$, we can replace $g$ by the standard basis vector $e_1$ by symmetry, and it immediately follows that $\eta(g,H;\mathcal{D}) \geq \mu/(dL)$.
+              When $\mathcal{D} = \unif(\{e_1, \cdots, e_d\})$,
+              \begin{align*}
+                  \mathbb{E}_{u\sim \mathcal{D}}\left[ \left(\frac{|{u}^\top {g}|}{\|u\|\|g\|}\right)^2 \right]
+                  = \frac{1}{d}\sum_{i=1}^{d}|g_i|^2 / \|g\|^2 = \frac{1}{d}
+              \end{align*}
+              and when $\mathcal{D} = \unif(\{\pm 1\}^d )$,
+              \begin{align*}
+                  \mathbb{E}_{u\sim \mathcal{D}}\left[ \left(\frac{|{u}^\top {g}|}{\|u\|\|g\|}\right)^2 \right]
+                  = \frac{1}{2^d}\sum_{u \in \{\pm 1\}^d} \frac{\sum_{i=1}^{d}|g_i|^2 + \sum_{i\neq j}u_i u_j g_i g_j}{d \|g\|^2}
+                  = \frac{1}{d}.
+              \end{align*}
+              Hence,  again from \eqref{eq: eta with curvature term and angle btw gradient}, we have the same lower bound $\mu/(dL)$.
+
+        \item When \eqref{eq: D approximates gradient} holds, \eqref{eq: eta with curvature term and angle btw gradient} provides the lower bound $\eta(g,H; \mathcal{D}) \geq \beta \mu / L$.
+              In particular, when $u$ is parallel to $g$ ({\em i.e. gradient direction}) with probability $p$, then $\eta \geq p\mu/L$.
+
+        \item When $u$ is the Newton direction, {\em i.e.} $u$ is parallel to $H^{-1}g$ with probability 1, $u^{\top}g = u^{\top}Hu = g^{\top}H^{-1}g$, and so $\eta(g,H;\mathcal{D}) = 1$.
+    \end{enumerate}
+    This finishes the proof.
+\end{proof}
+
+Lemma~\ref{lemma: Lower bound eta} suggests that assuming $\eta(g_k, H_k; \mathcal{D}_k) \geq \eta_{0} > 0$ for all $k\geq 0$ is reasonable in practice. Note Case 3 yields the best possible $\eta$, as $\eta\leq1$ by Cauchy-Schwarz. The next Lemma suggests that assuming $p_{\gamma} > 0$ is also reasonable in practice.
+
+
+\begin{lemma}[Estimation and Lower Bounds of $p_{\gamma}$ for Various Distributions]\label{lemma: p_gamma lower bounds} ~
+    \begin{enumerate}
+        \item (Uniform on sphere and Gaussian) When $\mathcal{D} = \mathcal{N}(0, I_d)$ or $\unif(\mathbb{S}^{d-1})$ we have
+              \begin{align}\label{eq: p_gamma bound for normal and uniform sphere}
+                  \mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \gamma \|u\|\|g\|\right] = I_{1-\gamma^2}\left(\frac{d-1}{2}, \frac{1}{2} \right).
+              \end{align}
+              In particular, for $d\geq 2$, $\mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \|u\|\|g\|/\sqrt{d} \right] \geq 0.315603$.
+        \item (Random coordinate direction) When $\mathcal{D} = \unif(\{e_1, \cdots, e_d\})$ we have
+              $$\mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \|u\|\|g\|/\sqrt{d}\right] \geq 1/d.$$
+
+    \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+    \begin{enumerate}
+        \item First note that we can assume $\|u\|=1$ in \eqref{eq: p_gamma bound for normal and uniform sphere}, and thus we only need to consider the case $\mathcal{D} = \unif{(\mathbb{S}^{d-1})}$.
+              In this case, $\mathcal{D}$ is invariant under rotation so we can take $g = e_1$ and
+              \begin{align*}
+                  \mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \gamma \|u\|\|g\|\right] & = \mathbb{P}[ |u_1| \geq \gamma ]
+                  = I_{1-\gamma^2}\left(\frac{d-1}{2}, \frac{1}{2} \right)
+              \end{align*}
+              where $I$ is the regularized incomplete Beta function as in \cite[Theorem~2.3]{cai2020scobo}.
+              In particular, when $\gamma = 1/\sqrt{d}$, the function $d\mapsto I_{1-1/d}\left(\frac{d-1}{2}, \frac{1}{2} \right)$ is decreasing for $d\geq 2$ and bounded below by 0. Thus $p_{\gamma} \geq \lim_{d\rightarrow \infty} I_{1-1/d}\left(\frac{d-1}{2}, \frac{1}{2} \right) = 0.315603\cdots$.
+
+        \item When $\mathcal{D} = \unif{\{e_1,\cdots,e_d\}}$,
+              \begin{align*}
+                  \mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \gamma \|u\|\|g\|\right]
+                  = \frac{1}{d} \sum_{i=1}^{d} 1_{|g_i| \geq \gamma\|g\|}.
+              \end{align*}
+              Recall that $\|g\|^2 = \sum_{i}|g_i|^2$. Hence,  we have $\max_{i} |g_i| \geq \|g\|/\sqrt{d}$, which implies $ \mathbb{P}_{u\sim\mathcal{D}} \left[ |u^{\top}g| \geq \|u\|\|g\|/\sqrt{d}\right] \geq 1/d$. Note that this bound is tight; the equality holds when, for example, $g = (1, 0, \cdots, 0)$.
+    \end{enumerate}
+    \noindent This finishes the proof.
+\end{proof}
+
+When $\gamma$ is small enough and $\mathcal{D}_k$ approximates the gradient or Newton direction close enough, both $\eta_{\mathcal{D}_k}$ and $p_\gamma$ do not depend on $d$, leading to dimension independent convergence rates. So, CARS can be combined with other derivative-free techniques that estimate the gradient (or Newton direction)---at the cost of two additional function queries per iteration CARS will choose an approximately optimal step-size in this computed direction. Our analysis easily extends to such combined methods, and we sketch how to do so for the widely used \cite{nesterov2017random,salimans2017evolution,choromanski2018structured,fazel2018global} variance-reduced Nesterov-Spokoiny gradient estimate:
+\begin{equation}
+    \tilde{g}_k := \frac{1}{m} \sum_{i=1}^m d_r(x_k;u_k)u_k \approx g_k.
+\end{equation}
+For simplicity, we assume access to exact directional derivatives (as in \cite{nesterov2017random}).
+
+\begin{corollary}
+    Let $f$ be $\mu$-strongly convex and $H$ be $a$-H\"{o}lder continuous. Suppose, at each step, $u_k$ is generated by first sampling $v_1,\cdots, v_m$ from Gaussian distribution $\mathcal{N}(0, I_d)$ and defining:
+    \begin{align*}
+        u_k = \frac{1}{m}\sum_{j=1}^{m} (g_k^{\top}v_j) v_j.
+    \end{align*}
+    Then CARS (Algorithm~\ref{alg:CARS}) finds $x_K$ with $\mathbb{E}[f(x_K)] - f_\star \leq \varepsilon$ if
+    \begin{align*}
+        K \geq \frac{2\hat{L}L(m+d+1)}{\hat{\mu}\mu mp_{\gamma}} \log\left(\frac{f(x_0) - f_\star}{\varepsilon} \right).
+    \end{align*}
+\end{corollary}
+\begin{proof}
+    From Lemma~\ref{lemma: Lower bound eta} (part 2) we obtain:
+    \begin{align*}
+        \eta_\mathcal{D} \geq \frac{\mu m}{L(m+d+1)}.
+    \end{align*}
+    Combining this with Corollary~\ref{thm:convergence of cars; strongly cvx} yields the claim.
+\end{proof}
