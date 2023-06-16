@@ -1,11 +1,5 @@
 \section{Introduction}
-We consider minimizing a function $f: \mathbb{R}^{d}\to \mathbb{R}$, with only access to function evaluations $f(x)$, and no access to gradients or directional derivatives. This setting is commonly referred to as derivative-free optimization (DFO). DFO has a rich history and has recently gained popularity in various areas such as reinforcement learning \cite{salimans2017evolution,mania2018simple,choromanski2020provably}, hyperparameter tuning \cite{bergstra2012random}, and adversarial attacks on neural network classifiers \cite{chen2017zoo,cai2020zeroth}. In all of these applications, evaluating $f(x)$ is either expensive, time-consuming, or inconvenient, and therefore, it is desirable for DFO algorithms to minimize the number of function evaluations required.
-
-Classical methods for DFO include the Nelder-Mead simplex method \cite{nelder1965simplex}, direct search methods \cite{kolda2003optimization}, and model-based methods \cite{conn2009introduction}. However, these methods tend to scale poorly with the problem dimension $d$, although recent works \cite{cartis2022scalable,cartis2022global,cartis2022dimensionality} have made progress in this direction. Due to the demands of large-scale machine learning applications, \textit{zeroth-order} (ZO) methods for DFO have gained increasing attention \cite{liu2020primer}. ZO methods mimic first-order methods like gradient descent but approximate all derivative information using function queries. At each iteration, the algorithm selects a direction $u_k$ and takes a step $x_{k+1} = x_k + \alpha_k u_k$. While the selection of $u_k$ has been well studied (see \cite{berahas2021theoretical} and references therein), this chapter focuses on the selection of $\alpha_k$, allowing for $u_k$ to be either randomly selected or an approximation to the negative gradient (i.e., $u_k \approx -\nabla f(x_k)$).
-
-Intelligently choosing $\alpha_k$ can lead to convergence in fewer iterations, but this gain may be offset by the number of queries it takes. If we compute $u_k \approx -\nabla f(x_k)$, techniques such as backtracking line search from first-order optimization can be employed \cite{berahas2021global}. However, obtaining a sufficiently accurate approximation to $-\nabla f(x_k)$ requires $\Omega(d)$ queries per iteration \cite{berahas2021theoretical}, which is impractical for large $d$. On the other hand, when we take $u_k$ as a random vector, with high probability $u_k$ is almost orthogonal to $-\nabla f(x_k)$. Hence, $\alpha_k$ in \cite{ghadimi2013stochastic,nesterov2017random,bergou2020stochastic} is very small to guarantee descent at every iteration (possibly in expectation). Our approach differs from these methods.
-
-We propose using finite difference approximations to the first and second derivatives of the univariate function $\alpha \mapsto f(x_k +\alpha u_k)$ to compute a candidate $\alpha_{+}$ for $\alpha_k$. Specifically, we set
+In this chapter, we propose using finite difference approximations to the first and second derivatives of the univariate function $\alpha \mapsto f(x_k +\alpha u_k)$ to compute a candidate $\alpha_{+}$ for $\alpha_k$. Specifically, we set
 \begin{align*}
     \alpha_{+} & = \frac{d_r}{\hat{L}h_r},
 \end{align*}
@@ -162,10 +156,10 @@ Finally, if we use a single sample $u$ for each expectation in \eqref{eq:CARS_to
 where $(a)$ follows as $u$ is an eigenvector of $u u^{\top} - I_d$ with eigenvalue $\|u\|_2^2 - 1$.
 For $A=I_d$, we recover CARS, up to a constant factor
 coming from the difference between the Gaussian distribution and the uniform distribution on the unit sphere. Thus, CARS can be thought of as an ES maintaining an isotropic population distribution (as $I_d$ is the covariance) but taking a {\em Newton step} each iteration to update the mean. This interpretation suggests the following modification to CARS: one can also update $A$ using the stochastic gradient:
-\begin{equation*}
+\begin{equation}\label{eq: ES covariance update}
     \nabla_{A}F(\psi,A) = 
     A^{-1}\mathbb{E}[f(\psi+r A u) (u u^{\top} - I_d)],
-\end{equation*}
+\end{equation}
 Another natural extension of CARS in this direction is to use a population of size greater than one to estimate the Newton vector in \eqref{eq:CARS_to_ES newton vector}. This yields
 \begin{align}\label{eq: ES extension of CARS multiple samples}
     \vec{n}(\psi) & \approx -2 A \left(\sum_{i=1}^{m} h_r (\psi; Au_i)(u_i u_i^{\top} - I_d)\right)^{-1} \left(\sum_{i=1}^{m} d_r (\psi; A u_i)u_i \right),

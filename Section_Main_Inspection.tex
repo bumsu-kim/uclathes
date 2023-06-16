@@ -1,11 +1,10 @@
 
 \section{Main Results}
-One of the core ideas in IR is, at each iteration, to restrict the cost of inspection up to same order of magnitude as $\mathcal{A}$.
+One of the core ideas in IR is, at each iteration, to restrict the cost of inspection up to the same order of magnitude as $\mathcal{A}$.
 This ensures that if both $\mathcal{A}$ and $\mathcal{A}$ with IR are stuck at the same local minimum, the overall sample complexity differs only by a constant factor.
 Moreover, this restriction simplifies the complexity analysis imposed by the inspection as it mainly focuses on the iteration counts.
 For line-search type methods, like Nesterov-Spokoiny (NS) \cite{nesterov2017random}, Stochastic Three Point (STP) and its momentum variant (SMTP) \cite{bergou2020stochastic,gorbunov2019stochastic}, and CARS from the previous chapter, the number of queries per iteration is $\mathcal{O}(1)$.
 On the other hand, for local methods requiring more queries per iteration, such as SPSA \cite{spall1992multivariate}, 2SPSA \cite{spall2000adaptive}, DGS \cite{zhang2020novel}, AdaDGS \cite{tran2020adadgs} and others using an adjustable size of batch of sample directions \cite{mania2018simple,salimans2017evolution},  more inspections can be performed each iteration.
-
 
 \begin{algorithm}[H]
     \caption{Inspect as You Run}
@@ -26,6 +25,8 @@ On the other hand, for local methods requiring more queries per iteration, such 
        \State \textbf{Output:} $x_K$: estimated optimum point.
     \end{algorithmic}
 \end{algorithm}
+
+\paragraph*{Comparison to the Run-and-Inspection Method} We first make clear that RUn-and-Inspection can be applied to any optimization methods, while IR is designed for mainly the combination with DFO methods. Also, while Run-and-Inspection waits until the local method converges, IR performs inspections in every iteration, which can result in an earlier escape from a basin of a (non-global) local minima.
 
 \subsection{Analysis on the High Probability Guarantee}
 This section presents an analysis of the point derived from Algorithm~\ref{alg:IR general}.

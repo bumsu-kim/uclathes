@@ -1,16 +1,13 @@
 \section{Introduction}
-In this chapter, we discuss the inspection strategy for DFO methods, focusing on filling the significant gap between global and local optimization strategies.
+In this chapter, we discuss the inspection strategy for DFO methods, with an emphasis on filling the gap between global and local optimization strategies.
+When the objective function is non-convex and has spurious local minima, it is generally very challenging to find the global minimum.
+In such cases, both global and local DFO methods may fail to deliver a satisfactory solution, as global method may be too computationally expensive and local methods may be trapped in a local minima.
 
-When the objective function is non-convex and has spurious local minima, it is in general difficult to find the global minimum using local optimization methods.
-Global optimization methods
-In such cases, local optimization methods are often used to find a local minimum. However, the quality of the local minimum is not guaranteed, and it is often difficult to quantify how good the solution is.
-Global optimization methods seek the absolute best solution throughout the entire solution space. While this ensures the optimal solution is found, these methods can be computationally intensive, particularly for high-dimensional problems. On the contrary, local optimization methods are geared towards finding a suitable solution within a localized area of the solution space. Although efficient, these methods may overlook the global optimum if it is located outside a certain neighborhood.
+We delve into the dichotomy between these two optimization strategies and discuss the $R$-local optimization approach \cite{chen2019run}, designed to bridge this gap. $R$-local optima lie between local and global optima, and often ensures a suitable solution quality by providing an adjustable radius for the solution's local neighborhood.
 
-We delve into the dichotomy between these two optimization strategies and discuss the $R$-local optimization approach \cite{chen2019run}, designed to bridge this gap. $R$-local optima lie between local and global optima, and often ensures a satisfactory solution quality by providing a definable radius for the solution's local neighborhood.
+We also explore how $R$-local optimization interacts with DFO methods. Despite their advantages, the Run-and-Inspect method, the first proposed $R$-local optimization method, can be computationally expensive, especially when the cost of sampling the objective function is not significantly cheaper than the gradient. However, in the context of DFO, the addition of inspections may not substantially impact the overall sample complexity.
 
-We also explore how $R$-local optimization interacts with DFO methods. Despite their advantages, $R$-local optimization methods can be computationally expensive, particularly when the cost of sampling the objective function is not significantly cheaper than the gradient. However, in the context of DFO, the addition of inspections may not substantially impact the overall sample complexity.
-
-Our proposed framework directs local DFO methods towards an $R$-local minimum using a similar number of additional queries, up to a constant factor, to those the method would typically consume \emph{per iteration}. This algorithm that doesn't rely on a global surrogate model, which can be computationally demanding in high-dimensional scenarios.
+Our proposed framework directs local DFO methods towards an $R$-local minimum, by escaping a local minima if possible. This algorithm that doesn't rely on a global surrogate model, which can be computationally demanding in high-dimensional scenarios. Instead, it can be integrated with any local DFO method that generates a sequence of iterates, thereby capitalizing on the strengths of existing local DFO methods to leverage the known structures of the problem.
 
 
 \subsection{The gap between global optimization and local optimization}
@@ -23,7 +20,6 @@ The majority of the optimization methods are either global optimization or local
 \paragraph{Gap between these two types of optimization} The gap can be understood through the following perspectives.
 
 Global optimization guarantees the best solution, while local optimization only guarantees the best solution within a local neighborhood. However, the size of the neighborhood is not known or controllable.
-
 Due to the need to explore the entire solution space, global optimization usually requires much more computational effort, causing much longer running time, than local optimization.
 
 In practice, the choice between local and global optimization often depends on the specific problem, the resources available, and the acceptable trade-offs. For low-dimensional problems where it is crucial to find the absolute best solution, global optimization becomes necessary. However, for many problems, a solution that is ``good enough'' is sufficient. 
@@ -32,7 +28,7 @@ Local methods, despite only producing local solutions, may be preferred and some
 To improve the solution quality of local methods, meta-heuristics were introduced. They include using multiple starting points, simulated annealing, genetic algorithms that allow occasional moves in the worse direction, etc.
 However, neither local methods nor their meta-heuristic improvements could quantify how ``good enough'' their solutions are.
 
-\paragraph{Filling the gap by $R$-local optimization}
+\paragraph{Bridging the gap by $R$-local optimization}
 According to \cite{chen2019run}, 
 an $R$-local minimizer is a type of local minimizer that specifies a radius of the local neighborhood around the minimizer.
 
@@ -44,17 +40,18 @@ The concept of an $R$-local minimizer is often used when we want to guarantee th
 % include a figure
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.5\textwidth]{sin1D.eps}
+    \includegraphics[width=0.6\textwidth]{sin1D.eps}
     \caption{A function with spurious local minima. When $R$ is sufficiently large, an $R$-local minimum is a global minimum.}
     \label{fig: 1D quad + sin}
 \end{figure}
 
 \subsection{DFO and $R$-local optimization}
-$R$-local optimization offers clear advantages over purely local methods in terms of discovering better solutions. However, it often incurs a higher computational cost, specifically requiring \BK{$\mathcal{O}(s \exp({O(d')}))$ samples for $s$ blocks of dimension $d'$ as shown in \cite{chen2019run}}.
-This can become prohibitively expensive in certain scenarios\BK{, particularly when the cost of sampling the objective function and its gradient is approximately equal}. However, in derivative-free optimization, unless there are special structures (such as sparse gradients described in \cite{cai2020zeroth}), an additional factor of $d$, compared to its gradient-based counterpart, in the sample complexity is unavoidable. Consequently, performing inspections may not significantly impact the overall sample complexity, but only up to a constant factor.
+$R$-local optimization offers clear advantages over purely local methods in terms of discovering better solutions. However, it often incurs a higher computational cost to escape from a local minima.
+This can become prohibitively expensive in certain scenarios, particularly when the cost of sampling the objective function is not necessarily much lower than its gradient. However, in derivative-free optimization, unless there are special structures (such as sparse gradients described in \cite{cai2020zeroth}), an additional factor of $d$, compared to its gradient-based counterpart, in the sample complexity is unavoidable. Consequently, performing inspections may not significantly impact the overall sample complexity in this case.
 
 \subsection{Assumptions and Notation}
-Our proposed method, Inspect as you Run is a framework that can be applied to any local DFO method. We assume that the local DFO method $\mathcal{A}$ is given,
+Our proposed method, Inspect-as-you-Run (IR) is a framework that can be applied to any local DFO method that generates a sequence of iterates. 
+We assume that the local DFO method $\mathcal{A}$ is given,
 and the objective function $f$ satisfies the conditions for $\mathcal{A}$ to converge to a local minimum.
 We also assume that $f$ is $\bar{L}$-Lipschitz continuous. Note that, however, if $\nabla f$ is already assumed to be Lipschitz, as in the analyses of many methods, this assumption implies the Lipschitz continuity of $f$.
 

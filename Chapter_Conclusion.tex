@@ -1,0 +1,23 @@
+In this concluding chapter, we summarize the key findings of this thesis and suggest potential future research directions.
+
+\section{Summary}
+This thesis presents two novel approaches designed to enhance local Derivative-Free Optimization (DFO) methods, along with novel theoretical analyses and numerical experiments that underscore their efficacy.
+
+In the first approach, we introduce a DFO method coined as Curvature-Aware Random Search (CARS), which leverages curvature information to optimize the step size along the search direction. We further refine CARS to develop the variants CARS-CR and CARS-NQ, creating a suite of lightweight, query-efficient DFO algorithms that can be easily implemented. 
+Our analysis establishes the convergence on strongly convex functions for CARS and convex functions for CARS-CR. Specifically, we develop a novel and rigorous analysis on the finite difference errors and the probability of significant descents of the objective function. 
+CARS-NQ utilizes Gauss-Hermite quadrature to more accurately estimate the directional derivatives, thereby improving robustness against highly oscillatory noise. 
+The adaptability of the CARS family to various distributions enables their use in a wide range of problem-specific distributions. 
+Furthermore, we present a novel randomized matrix inversion method that provides an unbiased estimator of an inverse matrix, computed via only quadratic measurements.
+This is the cornerstone of Stochastic Hessian Inversion for Projected Search (SHIPS) approach for more curvature information, wherein quadratic measurements are estimated by finite differences.
+ We demonstrate the efficacy of CARS and its variants through benchmark tests, where they outperform existing methods in minimizing non-convex functions as well.
+
+In the subsequent chapter, we outline an inspection strategy for DFO methods, Inspect as you Run (IR), which can be applied to any DFO method that generates a sequence of iterates. Our analysis establishes a high probability guarantee for approximate $R$-local minima, without compromising the local convergence property of the original DFO method. Extensive benchmark tests have shown the exceptional effectiveness of the inspection strategy, affirming its ability to bridge the gap between local and global DFO methods.
+
+\section{Future Research Directions}
+\begin{itemize}
+    \item \textbf{Variance Reduction} While the cost-effectiveness of sampling a single direction per iteration is beneficial, it does lead to a higher variance at each iteration.
+    This challenge can be addressed by sampling multiple directions per iteration, as suggested in \cite{liu2020primer}.
+    However, unlike DFO methods that mimic first-order methods, CARS involves a ratio of two estimators. The viewpoint introduced in Section~\ref{section: connection to ES} could provide useful insights into this issue and facilitate the multi-sample extension of CARS. Additionally, when a gradient estimate is available, combining it with finite difference estimates could further mitigate the variance.
+    \item \textbf{Adaptive Sampling Distribution} We showed in Section~\ref{section: connection to ES} that CARS corresponds to an evolution strategy on the isometric population, solely shifting its mean. We also suggest updating the distribution's covariance \eqref{eq: ES covariance update}. This concept has strong ties to randomized matrix inversion and adaptive sampling, as demonstrated in Algorithm~\ref{alg:RandInv_AS}. Although the latter approach appears to be less competitive in higher dimensions at present, further exploration may yield improvements.
+    \item \textbf{Use of Inspection Points} Inspection strategy proposed here, while fundamentally simple in its approach of selecting random points and comparing them to the current minimum, could potentially be enhanced by more intelligent utilization of the inspection point. One possibility is to treat the inspection points as a batch of random directions with a larger sampling radius. This multiscale strategy may be slightly more complex, but it has the potential to improve performance.
+\end{itemize}

@@ -55,7 +55,7 @@ Let $\{x_i\}_{i=1}^{n}$ be a set of $n$ points in $\mathbb{R}^d$ and $\{z_j\}_{j
 \end{equation*}
 We tackle this problem with derivative-free methods by treating $Z$ as a vector in $\mathbb{R}^{dK}$.
 
-\subsubsection*{Synthetic Gaussian data from \cite{yin2018stochastic}}
+\subsubsection*{Synthetic Gaussian Data from \cite{yin2018stochastic}}
 The first problem has synthetic Gaussian data, which is a mixture of four multivariate Gaussian distributions with $n = 1000$ each. This problem is introduced in \cite{yin2018stochastic}. We used the same means and covariance matrices:
 \begin{align*}
     \mu_1 = [-5, -3], \mu_2 = [5, -3], \mu_3 = [0, 5], \mu_4 = [2.5, 4],
@@ -84,7 +84,7 @@ The first problem has synthetic Gaussian data, which is a mixture of four multiv
     \label{fig: K-means synthetic}
 \end{figure*}
 
-\subsubsection*{Iris data}
+\subsubsection*{Iris Dataset}
 The second K-means clustering problem consists of the Iris dataset. This dataset contains 150 samples of three different species of Iris flowers. Each sample has four features: sepal length, sepal width, petal length, and petal width.
 \begin{figure}
     \centering
@@ -97,9 +97,9 @@ The second K-means clustering problem consists of the Iris dataset. This dataset
 We illustrate the results from 500 runs and the histogram of the final objective values in Figure~\ref{fig: K-means Iris}.
 The figures demonstrate that the IR version of CARS finds better minima in most cases, and more rapidly.
 
-\subsection*{Hyperparameter tuning}
+\subsection*{Hyperparameter Tuning}
 We applied the two versions of CARS to hyperparameter tuning for training a convolutional neural network on the MNIST dataset.
-The hyperparameters included the $L^2$ regularization parameter in the loss, the learning rate for the optimizer (AdaDelta), and the annealing rate for the scheduler (StepLR). To show the ability to escape the local minima more clearly, we started from a suboptimal initial point $x_0 = (0.5, 0.5, 0.5)$.
+The hyperparameters included the $L^2$ regularization parameter in the loss, the learning rate for the optimizer (AdaDelta), and the annealing rate for the scheduler (StepLR) as in \cite{hutter2019automated}. To show the ability to escape the local minima more clearly, we started from a suboptimal initial point $x_0 = (0.5, 0.5, 0.5)$.
 
 To reduce the variance, the objective function for the hyperparameter is set to be the mean of two samples, which measures the misclassification rate of the trained model with the given set of hyperparameters.
 
@@ -112,7 +112,7 @@ To reduce the variance, the objective function for the hyperparameter is set to 
     \label{fig: HP Tuning - MNIST}
 \end{figure}
 
-\subsection*{Spurious local minima in higher dimension}
+\subsection*{Spurious Local Minima in Higher Dimension}
 We revisit the function with spurious local minima in higher dimension, $d=300$, and compare the performance of CARS and the IR version of CARS with the global method RBFOpt \cite{costa2018rbfopt}, which is one of the most efficient the global methods.
 RBFOpt took 15,073 seconds for 1,000 iterations (1,241 function evaluations), while CARS ran in 1.474 seconds for 30,000 function evaluations.
 Here we see that the computational cost of the solver itself (sub-problems) is much higher in the global methods, often making it impractical for high-dimensional problems.

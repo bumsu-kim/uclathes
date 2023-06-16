@@ -5,44 +5,44 @@ The style file: uclathes.bst
 Database file #1: realbib.bib
 UCLA thesis.bst Version 0.92 BETA (3/28/91).
 Bugs to wales@CS.UCLA.EDU
-You've used 74 entries,
+You've used 75 entries,
             2546 wiz_defined-function locations,
-            978 strings with 17987 characters,
-and the built_in function-call counts, 34658 in all, are:
-= -- 3544
-> -- 1598
+            982 strings with 18133 characters,
+and the built_in function-call counts, 35027 in all, are:
+= -- 3576
+> -- 1621
 < -- 23
-+ -- 612
-- -- 438
-* -- 2738
-:= -- 5268
-add.period$ -- 232
-call.type$ -- 74
-change.case$ -- 438
-chr.to.int$ -- 73
-cite$ -- 74
-duplicate$ -- 1458
-empty$ -- 2441
-format.name$ -- 685
-if$ -- 7056
++ -- 621
+- -- 444
+* -- 2763
+:= -- 5329
+add.period$ -- 235
+call.type$ -- 75
+change.case$ -- 444
+chr.to.int$ -- 74
+cite$ -- 75
+duplicate$ -- 1475
+empty$ -- 2467
+format.name$ -- 695
+if$ -- 7128
 int.to.chr$ -- 2
 int.to.str$ -- 0
-missing$ -- 150
-newline$ -- 373
-num.names$ -- 224
-pop$ -- 425
+missing$ -- 153
+newline$ -- 378
+num.names$ -- 227
+pop$ -- 435
 preamble$ -- 1
-purify$ -- 659
+purify$ -- 668
 quote$ -- 0
-skip$ -- 1336
+skip$ -- 1349
 stack$ -- 0
-substring$ -- 2254
-swap$ -- 311
+substring$ -- 2263
+swap$ -- 312
 text.length$ -- 23
-text.prefix$ -- 175
+text.prefix$ -- 178
 top$ -- 2
-type$ -- 584
+type$ -- 588
 warning$ -- 0
-while$ -- 343
-width$ -- 79
-write$ -- 965
+while$ -- 346
+width$ -- 80
+write$ -- 977

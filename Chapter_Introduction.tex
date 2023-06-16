@@ -1,3 +1,14 @@
-\section{Introduction}
-\label{sec:intro}
-Derivative-Free Optimization
+We consider minimizing a function $f: \mathbb{R}^{d}\to \mathbb{R}$, with only access to function evaluations $f(x)$, and no access to gradients or directional derivatives. This setting is commonly referred to as derivative-free optimization (DFO). DFO has a rich history and has recently gained popularity in various areas such as reinforcement learning \cite{salimans2017evolution,mania2018simple,choromanski2020provably}, hyperparameter tuning \cite{bergstra2012random,hutter2019automated} and adversarial attacks on neural network classifiers \cite{chen2017zoo,cai2020zeroth}. In all of these applications, evaluating $f(x)$ is either expensive, time-consuming, or inconvenient, and therefore, it is desirable for DFO algorithms to minimize the number of function evaluations required.
+
+Classical methods for DFO include the Nelder-Mead simplex method \cite{nelder1965simplex}, direct search methods \cite{kolda2003optimization}, and model-based methods \cite{conn2009introduction}. However, these methods tend to scale poorly with the problem dimension $d$, although recent works \cite{cartis2022scalable,cartis2022global,cartis2022dimensionality} have made progress in this direction. Due to the demands of large-scale machine learning applications, \textit{zeroth-order} (ZO) methods for DFO have gained increasing attention \cite{liu2020primer}. ZO methods mimic first-order methods like gradient descent but approximate all derivative information using function queries. 
+
+At each iteration, the algorithm selects a direction $u_k$ and takes a step $x_{k+1} = x_k + \alpha_k u_k$. While the selection of $u_k$ has been well studied (see \cite{berahas2021theoretical} and references therein), this thesis focuses on the selection of $\alpha_k$, allowing for $u_k$ to be either randomly selected or an approximation to the negative gradient (i.e., $u_k \approx -\nabla f(x_k)$).
+
+The first part of this thesis, Chapter~\ref{Chapter: CARS}, focuses on the development of a novel ZO method in this direction.
+Intelligently choosing $\alpha_k$ can lead to convergence in fewer iterations, but this gain may be offset by the number of queries it takes. If we compute $u_k \approx -\nabla f(x_k)$, techniques such as backtracking line search from first-order optimization can be employed \cite{berahas2021global}. However, obtaining a sufficiently accurate approximation to $-\nabla f(x_k)$ requires $\Omega(d)$ queries per iteration \cite{berahas2021theoretical}, which is impractical for large $d$. On the other hand, when we take $u_k$ as a random vector, with high probability $u_k$ is almost orthogonal to $-\nabla f(x_k)$. Hence, $\alpha_k$ in \cite{ghadimi2013stochastic,nesterov2017random,bergou2020stochastic} is very small to guarantee descent at every iteration (possibly in expectation).
+
+Our approach differs from these methods, namely 
+
+\section{Curvature Information in DFO}
+
+\section{Inspection Strategy for DFO}
