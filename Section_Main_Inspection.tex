@@ -1,61 +1,35 @@
 
 \section{Main Results}
-Suppose that we have a local DFO method (e.g. Nesterov-Spokoiny\cite{nesterov2017random}, or CARS\cite{kim2021curvature}) that consumes up to $\mathcal{O}(d^\nu)$ queries per iteration. (for instance, $\nu = 0$ for CARS, and $\nu=1$ for AdaDGS. For Nesterov-Spokoiny, $\nu$ is typically 0 or 1, depending on the level of approximation to the Monte-Carlo approximation).
-The main idea is to use additional queries, up to the same $\mathcal{O}(d^\nu)$, to drive the method to converge to an $R$-local minima with high probability. The resulting algorithm thus requires the same order of magnitude in terms of function queries.
-In addition to that, we want it to be a model-free algorithm, meaning that we don't set up a global surrogate model for the problem, which is often quite expensive when $d$ is large.
-
-
-
-\begin{definition}[Successful Inspection] Given a descent threshold $\nu$, an inspection at a point $y$ around $x$ is said to be successful $\nu \geq 0$ if $f(y) < f(x) - \nu$.
-\end{definition}
+One of the core ideas in IR is, at each iteration, to restrict the cost of inspection up to same order of magnitude as $\mathcal{A}$.
+This ensures that if both $\mathcal{A}$ and $\mathcal{A}$ with IR are stuck at the same local minimum, the overall sample complexity differs only by a constant factor.
+Moreover, this restriction simplifies the complexity analysis imposed by the inspection as it mainly focuses on the iteration counts.
+For line-search type methods, like Nesterov-Spokoiny (NS) \cite{nesterov2017random}, Stochastic Three Point (STP) and its momentum variant (SMTP) \cite{bergou2020stochastic,gorbunov2019stochastic}, and CARS from the previous chapter, the number of queries per iteration is $\mathcal{O}(1)$.
+On the other hand, for local methods requiring more queries per iteration, such as SPSA \cite{spall1992multivariate}, 2SPSA \cite{spall2000adaptive}, DGS \cite{zhang2020novel}, AdaDGS \cite{tran2020adadgs} and others using an adjustable size of batch of sample directions \cite{mania2018simple,salimans2017evolution},  more inspections can be performed each iteration.
 
 
 \begin{algorithm}[H]
-\caption{Inspect as You Run}
- \label{alg:IR general}
-\begin{algorithmic}[1]
-  \State \textbf{Input:} $x_0$: initial point; $r$: sampling radius; $R$: inspection radius; $\mathcal{A}$: One step of a DFO method, generating the next iterate; $n_k$: maximum number of inspections at $k$-th iteration; $\nu$: descent threshold
-  \State Get the oracle $f(x_0)$.
-  \For{$k = 1, \cdots, K$}
-        \State Compute $x_{k, 0} = \mathcal{A}(x_k)$
-        \For {$j = 1, \cdots, n_k$}
-            \State Compute $f(x_{k,j})$ 
-            \If{$f(x_{k,j}) < f(x_{k,0}) - \nu$}
-                \State Set $x_{k+1} = x_{k,j}$ and \emph{break}
-            \EndIf
-        \EndFor
-        \State If no successful inspections, set $x_{k+1} = x_{k,0}$ \label{eq: inspection step in the algorithm 1}
-  \EndFor
-   \State \textbf{Output:} $x_K$: estimated optimum point.
-\end{algorithmic}
+    \caption{Inspect as You Run}
+     \label{alg:IR general}
+    \begin{algorithmic}[1]
+      \State \textbf{Input:} $x_0$: initial point; $r$: sampling radius; $R$: inspection radius; $\mathcal{A}$: One step of a DFO method, generating the next iterate; $n_k$: maximum number of inspections at $k$-th iteration; $\nu$: descent threshold
+      \State Get the oracle $f(x_0)$.
+      \For{$k = 1, \cdots, K$}
+            \State Compute $x_{k, 0} = \mathcal{A}(x_k)$
+            \For {$j = 1, \cdots, n_k$}
+                \State Compute $f(x_{k,j})$ 
+                \If{$f(x_{k,j}) < f(x_{k,0}) - \nu$}
+                    \State Set $x_{k+1} = x_{k,j}$ and \emph{break}
+                \EndIf
+            \EndFor
+            \State If no successful inspections, set $x_{k+1} = x_{k,0}$ \label{eq: inspection step in the algorithm 1}
+      \EndFor
+       \State \textbf{Output:} $x_K$: estimated optimum point.
+    \end{algorithmic}
 \end{algorithm}
 
-\subsection{Analysis}
-% In this section we largely depend on the analysis in \cite{chen2019run} to guarantee the convergence of this plug-in algorithm to an appropriate point.
-% First we introduce a blockwise $\mathbf{R}$-local minimizer, which generalizes the $R$-local minimizer.
-
-% Cite Run-and-Inspection paper's results
-
-% When $f$ has a form $g + \rho$, where $g$ has $L$-Lipschitz gradient and is Polyak-{\L}ojasiewicz (PL), and $\rho$ satisfies:
-% \begin{align*}
-%     |\rho(x)- \rho(y)| \leq \alpha \|x-y\| + 2\beta ,
-% \end{align*}
-In this section, we provide an analysis for the point obtained from Algorithm~\ref{alg:IR general}.
-Roughly speaking, if the recent $M$ inspections did not give a better point than the local DFO method $\mathcal{A}$, it is an $R_0$-local minimum with probability at least $1 - \exp(-\mathcal{O}(M))$, for some $R_0 < R$.
-
-We assume the objective function $f$ satisfies the conditions for the DFO method $\mathcal{A}$ to converge. In addition, we also assume $f$ is $\bar{L}$-Lipschitz continuous. Note that, however, if $\nabla f$ is already assumed to be Lipschitz, like in the analyses of many methods, the assumption implies the Lipschitz continuity of $f$.
-
-% Although a local DFO method that estimates the derivatives by finite difference can smooths out the effect of $\beta$ with large sampling radius $r$, they also blow up if $r$ is too small. Thus we assume $\beta= 0$ here for a simpler analysis.
-% In practice, one can use an appropriate lower bound for $r$ to achieve an approximate optimum.
-% thus  for instance, $O(\varepsilon^{1/4})$ for CARS 
-
-% Theorem 5 in \cite{chen2019run} gives a sufficient condition for a $\mathbf{R}$-local minimizer $\bar{x}$ being an approximate global minimizer. Furthermore, Theorem 7 states that an \emph{approximate} $\mathbf{R}$-local minimizer can also be one. Finally, Theorem 9 addresses the condition to guarantee an approximate $\mathbf{R}$-local minimizer.
-
-
-
-For CARS \cite{kim2021curvature}, for instance, it originally uses 4 (CARS, the vanilla version) or 5 (CARS-CR) queries per iteration. Thus by adding, for instance, 3 queries for inspection per iteration, we have the IR version of CARS, whose cost is up to 75\% more than the original method per iteration.
-
-In particular, for convex problems the overall cost will be increased with at most a constant factor. However, we argue that with inspection one can find significantly better local minima for a certain class of nonconvex problems.
+\subsection{Analysis on the High Probability Guarantee}
+This section presents an analysis of the point derived from Algorithm~\ref{alg:IR general}.
+The main result states that if the recent iterations are trapped in a small region without successful inspections, then it is an $R_0$-local minimum with high probability, for some $R_0 < R$.
 
 \begin{theorem} \label{thm: high prob guarantee of an approx. R-local min}
     Let $\{x_k\}_{k=1}^{K}$ be the sequence of points obtained from Algorithm~\ref{alg:IR general}. Assume that no successful inspections occur for all $k \geq k_0$, and let $m$ be the total number of inspections for $k \geq k_0$. Suppose
@@ -89,10 +63,13 @@ In particular, for convex problems the overall cost will be increased with at mo
         & = (1-\phi_1 \phi_2 )^m \\
         & \leq \exp(-m\phi_1 \phi_2), & \text{($1-x \leq \exp(-x)$)}
     \end{align*}
-    where (a) is from the moment generating function formula for binomial distributions.
+    where (a) is from the moment generating function of binomial distributions.
     And since $\phi_1 \phi_2 = (\tilde{r}/R)^d$, $S \cap B(\tilde{x}, \tilde{r})$ is nonempty with a probability of at least $1 - \exp(-m (\tilde{r}/R)^d)$.
 \end{proof}
 
+A direct implication of Theorem~\ref{thm: high prob guarantee of an approx. R-local min} is that if the iterates get trapped and no further successful inspections are found since then, the solution obtained is an approximate $R_0$-local minimum with probability at least $1-\delta$, given the count of such consecutive inspections exceeds  $\log(\delta^{-1}) \left(\frac{R}{\tilde{r}}\right)^d$.
 
-
-Theorem~\ref{thm: high prob guarantee of an approx. R-local min} states that when we are near the local minimum found by a DFO method, we can guarantee, with probability $1-\delta$, it is indeed an approximate $R_0$-local minimum with a total number of $\log(\delta^{-1}) \left(\frac{R}{\tilde{r}}\right)^d$ inspections.
+\subsection{Discussion on IR}
+Unlike global DFO methods that constructs a surrogate model in the entire domain, it is easier for local methods to exploit the structure of the problem.
+For instance, if most variables are not highly correlated, Coordinate Descent (CD) \cite{wright2015coordinate} or Block Coordinate Descent (BCD) \cite{tseng2001convergence} analogue of DFO methods can be extremely useful. For instance, such variants can be easily obtained by replacing the sampling distribution in CARS.
+This room for the choice depending on the problem structure is one of the advantages of our method and really fills the gap between the local and global DFO methods.

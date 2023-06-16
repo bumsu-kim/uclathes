@@ -41,6 +41,32 @@ This means $x^\star$ is a local minimizer in the neighborhood of radius $R$ arou
 
 The concept of an $R$-local minimizer is often used when we want to guarantee the solution found to have a sufficient quality in a vicinity of a defined size. This can be helpful when the global minimizer cannot be easily found or when the function is too complex to optimize over its entire domain. The value of $R$ could be chosen based on some prior knowledge or through a process of trial and error.
 
-\subsection{DFO and \$R\$-local optimization}
+% include a figure
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.5\textwidth]{sin1D.eps}
+    \caption{A function with spurious local minima. When $R$ is sufficiently large, an $R$-local minimum is a global minimum.}
+    \label{fig: 1D quad + sin}
+\end{figure}
+
+\subsection{DFO and $R$-local optimization}
 $R$-local optimization offers clear advantages over purely local methods in terms of discovering better solutions. However, it often incurs a higher computational cost, specifically requiring \BK{$\mathcal{O}(s \exp({O(d')}))$ samples for $s$ blocks of dimension $d'$ as shown in \cite{chen2019run}}.
 This can become prohibitively expensive in certain scenarios\BK{, particularly when the cost of sampling the objective function and its gradient is approximately equal}. However, in derivative-free optimization, unless there are special structures (such as sparse gradients described in \cite{cai2020zeroth}), an additional factor of $d$, compared to its gradient-based counterpart, in the sample complexity is unavoidable. Consequently, performing inspections may not significantly impact the overall sample complexity, but only up to a constant factor.
+
+\subsection{Assumptions and Notation}
+Our proposed method, Inspect as you Run is a framework that can be applied to any local DFO method. We assume that the local DFO method $\mathcal{A}$ is given,
+and the objective function $f$ satisfies the conditions for $\mathcal{A}$ to converge to a local minimum.
+We also assume that $f$ is $\bar{L}$-Lipschitz continuous. Note that, however, if $\nabla f$ is already assumed to be Lipschitz, as in the analyses of many methods, this assumption implies the Lipschitz continuity of $f$.
+
+Also, as in the previous chapter, let $\| \cdot \|$ denote the Euclidean norm, $\unif(S)$ be the uniform distribution over $S$, and the unit sphere be written as $\mathcal{S}^{d-1}$. In addition, the closed ball of radius $R$ centered at $x$ is denoted as $B(x, R) = \{y \in \mathbb{R}^d : \|y - x\| \leq R\}$.
+
+We then introduce a notion of an approximate $R$-local minimizer, which generalizes the $R$-local minimizer:
+\begin{definition} \label{def: approximate R-local minimizer}
+    Given a descent threshold $\nu$, a point $\bar{x}$ is said to be an \emph{approximate $R$-local minimizer} if $f(\bar{x}) \leq f(x) + \nu$ for all $x \in B(\bar{x}, R)$.    
+\end{definition}
+
+Furthermore, defining the following notion of trapping would be useful, because we want to restrict how far the iterates wander around while we inspect nearby points.
+\begin{definition}
+    Let $\{x_k\}_{k=0}^{K}$ be a sequence in $\mathbb{R}^d$. We say $\{x_k\}$ is trapped in a $D$-ball for $k_0 \leq k \leq k_1$ if $\|x_{k} - x_{k^{\prime}}\| \leq D$ for all $k_0 \leq k, k^{\prime} \leq k_1$.
+\end{definition}
+
